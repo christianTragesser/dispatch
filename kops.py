@@ -96,11 +96,14 @@ def createCluster(session, name, bucket, azs):
   ])
 
 def listKOPSclusters(session, bucket):
-  print ' Existing KOPS clusters:'
   s3 = session.client('s3')  
   response = s3.list_objects_v2(Bucket=bucket, Delimiter='/')
-  for cluster in response['CommonPrefixes']:
-    print '  - %s' % cluster['Prefix'].replace('/', '')
+  if 'CommonPrefixes' in response:
+    print ' Existing KOPS clusters:'
+    for cluster in response['CommonPrefixes']:
+      print '  - %s' % cluster['Prefix'].replace('/', '')
+  else:
+    print '   No clusters found.'
 
 def deleteOption(session, bucket):
   listKOPSclusters(session, bucket)

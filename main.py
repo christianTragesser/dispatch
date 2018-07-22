@@ -81,13 +81,15 @@ try:
   
   print'''Dispatch Menu:
     [1] Create new KOPS cluster
-    [2] Delete an existing KOPS cluster
+    [2] List organization clusters
+    [3] Delete an existing KOPS cluster
     [*] Just give me a shell already!
   '''
   
   choice = {
     '1': kops.createOption,
-    '2': kops.deleteOption
+    '2': kops.listKOPSclusters,
+    '3': kops.deleteOption
   }
   
   option = raw_input(' Please select an [option]: ')
