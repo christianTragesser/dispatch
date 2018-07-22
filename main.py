@@ -25,7 +25,7 @@ Access Keys as environment variables 'AWS_ACCESS_KEY_ID' and
 docker run --rm -it \\
 -e AWS_ACCESS_KEY_ID="<access_key_id>" \\
 -e AWS_SECRET_ACCESS_KEY="<secret_access_key>" \\
--v $HOME/root \\
+-v $HOME:/root \\
 christiantragesser/dispatch
 
 ******************************************************************
@@ -96,4 +96,4 @@ try:
   action = choice.get(option, kops.giveMeShell)
   action(kopsCreds, userDetail['bucket'])
 except KeyboardInterrupt:
-  print "\n Keyboard interuption, we gone!"
+  print "\n\n Keyboard interuption, we gone!"
