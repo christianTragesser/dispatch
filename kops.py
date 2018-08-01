@@ -45,8 +45,8 @@ def describeAzs(session, region):
 
 def createOption(session, bucket):
   cluster_type = 'Quick'
-  cluster_name = raw_input('\n New cluster FQDN(ex: test.k8s.local): ')
-  region = raw_input(' Which AWS region?(ex: us-east-1): ')
+  cluster_name = raw_input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
+  region = raw_input(' AWS region(us-east-1): ') or 'us-east-1'
   try:
     azs = describeAzs(session, region)
   except EndpointConnectionError:
@@ -59,7 +59,7 @@ def createOption(session, bucket):
     Cluster type: %s
     AWS region: %s
   ''' % (cluster_name, cluster_type, region)
-  verification = raw_input(' Create this cluster?(y/n) ')
+  verification = raw_input(' Create this cluster?(y/n) ') or 'n'
   if verification == 'y' or verification == 'Y':
     try:
       kopsSSHkey()      
