@@ -83,6 +83,7 @@ try:
     [1] Create new KOPS cluster
     [2] List organization clusters
     [3] Delete an existing KOPS cluster
+    [Q] Quit
     [*] Just give me a shell already!
   '''
   
@@ -92,8 +93,11 @@ try:
     '3': kops.deleteOption
   }
   
-  option = raw_input(' Please select an [option]: ')
-  action = choice.get(option, kops.giveMeShell)
-  action(kopsCreds, userDetail['bucket'])
+  option = raw_input(' Please select an [option]: ') or '*'
+  if option == 'Q' or option == 'q':
+    sys.exit(0)
+  else:
+    action = choice.get(option, kops.giveMeShell)
+    action(kopsCreds, userDetail['bucket'])
 except KeyboardInterrupt:
   print "\n\n Keyboard interuption, we gone!"
