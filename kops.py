@@ -44,7 +44,6 @@ def describeAzs(session, region):
   return zones 
 
 def createOption(session, bucket):
-  cluster_type = 'Quick'
   cluster_name = raw_input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
   region = raw_input(' AWS region(us-east-1): ') or 'us-east-1'
   try:
@@ -56,10 +55,9 @@ def createOption(session, bucket):
   print '''
   New cluster details:
     Cluster name: %s
-    Cluster type: %s
     AWS region: %s
-  ''' % (cluster_name, cluster_type, region)
-  verification = raw_input(' Create this cluster?(y/n) ') or 'n'
+  ''' % (cluster_name, region)
+  verification = raw_input(' Create this cluster?(y/n): ') or 'n'
   if verification == 'y' or verification == 'Y':
     try:
       kopsSSHkey()      
@@ -78,9 +76,9 @@ def createCluster(session, name, bucket, azs):
   os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
   os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
 
-  labels = "owner=%s, cost_savings=True" % name
-  print 'Creating cluster %s.k8s.local' % name
-  print 'Using KOPS store @ s3://%s' % bucket
+  labels = "owner=%s, CreatedBy=Dispatch" % name
+  print 'Creating cluster %s' % name
+  print 'Using KOPS store @ s3://%s \n' % bucket
 
   call(['kops', 'create', 'cluster',
     '--zones='+azs[0],
@@ -107,8 +105,9 @@ def listKOPSclusters(session, bucket):
 
 def deleteOption(session, bucket):
   listKOPSclusters(session, bucket)
-  name = raw_input('\n FQDN of cluster to delete: ')
-  verification = raw_input(' Are you SURE you want to delete cluster %s?(yes/no) ' % name)
+  name = raw_input('\n FQDN of cluster to delete: ') or ''
+  print '\n Are you SURE you want to delete cluster %s?' % name
+  verification = raw_input(' You must type "yes" to verify: ') or 'no'
   if verification == 'yes' or verification == 'Yes':
     try:
       deleteCluster(session, name, bucket)
