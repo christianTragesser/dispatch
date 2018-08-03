@@ -43,6 +43,26 @@ def describeAzs(session, region):
 
   return zones 
 
+def setClusterSize():
+  print''' Cluster Size:
+    [S]mall - 2 CPU/4 GB RAM nodes
+    [M]edium - 4 CPU/16 GB RAM nodes
+    [L]arge - 8 CPU/32 GB RAM nodes'''
+
+  option = raw_input('    Size(s): ') or 's'
+  sizes = {
+    's': { 'label': 'Small', 'instance_size': 't2.medium' },
+    'S': { 'label': 'Small', 'instance_size': 't2.medium' },
+    'm': { 'label': 'Medium', 'instance_size': 't2.xlarge' },
+    'M': { 'label': 'Medium', 'instance_size': 't2.xlarge' },
+    'l': { 'label': 'Large', 'instance_size': 'm4.2xlarge' },
+    'L': { 'label': 'Large', 'instance_size': 'm4.2xlarge' }
+  }
+
+  size = sizes.get(option, { 'label': 'Small', 'instance_size': 't2.medium' })
+
+  return size
+
 def createOption(session, bucket):
   cluster_name = raw_input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
   region = raw_input(' AWS region(us-east-1): ') or 'us-east-1'
@@ -51,17 +71,22 @@ def createOption(session, bucket):
   except EndpointConnectionError:
     print " ! There was an issue with the AWS region you entered, let's try again."
     createOption(session, bucket)
+
+  node_size = setClusterSize()
   
+  print node_size['instance_size']
+
   print '''
   New cluster details:
     Cluster name: %s
+    Cluster size: %s
     AWS region: %s
-  ''' % (cluster_name, region)
+  ''' % (cluster_name, node_size['label'], region)
   verification = raw_input(' Create this cluster?(y/n): ') or 'n'
   if verification == 'y' or verification == 'Y':
     try:
       kopsSSHkey()      
-      createCluster(session, cluster_name, bucket, azs)
+      createCluster(session, cluster_name, bucket, azs, node_size)
     except Exception as err:
       print err
       sys.exit(1)
@@ -69,7 +94,7 @@ def createOption(session, bucket):
     print 'exiting.'
     sys.exit(0)
 
-def createCluster(session, name, bucket, azs):
+def createCluster(session, name, bucket, azs, node_size):
   creds = session.get_credentials()
   creds = creds.get_frozen_credentials()
   os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
@@ -82,7 +107,7 @@ def createCluster(session, name, bucket, azs):
 
   call(['kops', 'create', 'cluster',
     '--zones='+azs[0],
-    '--node-size=m4.large',
+    '--node-size='+node_size['instance_size'],
     '--topology=private',
     '--networking=weave',
     '--cloud-labels='+labels,
