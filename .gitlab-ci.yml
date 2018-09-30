@@ -1,0 +1,24 @@
+image: registry.gitlab.com/christiantragesser/dind-py:3
+
+variables:
+  DOCKER_DRIVER: overlay2
+  SERVICE: dispatch
+  EXT_NAME: $CI_REGISTRY/christiantragesser/$SERVICE
+
+services:
+  - name: docker:dind
+
+stages:
+  - test
+
+test:
+  stage: test
+  tags:
+    - docker
+  script:
+    - $CI_PROJECT_DIR/ci.py test
+    - docker tag local/${SERVICE}:latest $EXT_NAME:latest
+    - docker tag $EXT_NAME:latest $EXT_NAME:$CI_COMMIT_SHA
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $EXT_NAME:latest | grep -e "The push refers to" -e latest
+    - docker push $EXT_NAME:$CI_COMMIT_SHA | grep -e "The push refers to" -e latest
