@@ -12,11 +12,11 @@ def giveMeShell(session, bucket):
   os.system('/bin/sh')
 
 def kopsSSHkey():
-  sshKeyDir = '/root/.ssh'
+  sshKeyDir = os.environ['HOME']+'/.ssh'
   sshKey = sshKeyDir+'/kops_rsa'
   if not os.path.isfile(sshKey):
-    print '\n* KOPS RSA key not found, generating...'
-    print ' + Creating RSA key %s' % sshKey
+    print('\n* KOPS RSA key not found, generating...')
+    print(' + Creating RSA key {0:s}'.format(sshKey))
     call(['ssh-keygen', '-t', 'rsa',
       '-b', '2048',
       '-q',
@@ -44,12 +44,12 @@ def describeAzs(session, region):
   return zones 
 
 def setClusterSize():
-  print''' Cluster Size:
+  print(''' Cluster Size:
     [S]mall - 2 CPU/4 GB RAM nodes
     [M]edium - 4 CPU/16 GB RAM nodes
-    [L]arge - 8 CPU/32 GB RAM nodes'''
+    [L]arge - 8 CPU/32 GB RAM nodes''')
 
-  option = raw_input('    Size(s): ') or 's'
+  option = input('    Size(s): ') or 's'
   sizes = {
     's': { 'label': 'Small', 'instance_size': 't2.medium' },
     'S': { 'label': 'Small', 'instance_size': 't2.medium' },
@@ -64,34 +64,33 @@ def setClusterSize():
   return size
 
 def createOption(session, bucket):
-  cluster_name = raw_input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
-  region = raw_input(' AWS region(us-east-1): ') or 'us-east-1'
+  cluster_name = input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
+  region = input(' AWS region(us-east-1): ') or 'us-east-1'
   try:
     azs = describeAzs(session, region)
   except EndpointConnectionError:
-    print " ! There was an issue with the AWS region you entered, let's try again."
+    print(" ! There was an issue with the AWS region you entered, let's try again.")
     createOption(session, bucket)
 
   node_size = setClusterSize()
-  
-  print node_size['instance_size']
 
-  print '''
+  print('''
   New cluster details:
-    Cluster name: %s
-    Cluster size: %s
-    AWS region: %s
-  ''' % (cluster_name, node_size['label'], region)
-  verification = raw_input(' Create this cluster?(y/n): ') or 'n'
+    Cluster name: {0:s}
+    Cluster size: {1:s}
+    AWS region: {2:s}
+  '''.format(cluster_name, node_size['label'], region))
+  verification = input(' Create this cluster?(y/n): ') or 'n'
   if verification == 'y' or verification == 'Y':
     try:
       kopsSSHkey()      
+      print('Attempting createCluster function')
       createCluster(session, cluster_name, bucket, azs, node_size)
     except Exception as err:
-      print err
+      print(err)
       sys.exit(1)
   else:
-    print 'exiting.'
+    print('exiting.')
     sys.exit(0)
 
 def createCluster(session, name, bucket, azs, node_size):
@@ -101,9 +100,9 @@ def createCluster(session, name, bucket, azs, node_size):
   os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
   os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
 
-  labels = "owner=%s, CreatedBy=Dispatch" % name
-  print 'Creating cluster %s' % name
-  print 'Using KOPS store @ s3://%s \n' % bucket
+  labels = 'owner={0:s}, CreatedBy=Dispatch'.format(name)
+  print('Creating cluster {0:s}'.format(name))
+  print('Using KOPS store @ s3://{0:s} \n'.format(bucket))
 
   call(['kops', 'create', 'cluster',
     '--zones='+azs[0],
@@ -122,25 +121,25 @@ def listKOPSclusters(session, bucket):
   s3 = session.client('s3')  
   response = s3.list_objects_v2(Bucket=bucket, Delimiter='/')
   if 'CommonPrefixes' in response:
-    print ' Existing KOPS clusters:'
+    print(' Existing KOPS clusters:')
     for cluster in response['CommonPrefixes']:
-      print '  - %s' % cluster['Prefix'].replace('/', '')
+      print('  - {0:s}'.format(cluster['Prefix'].replace('/', '')))
   else:
-    print '   No clusters found.'
+    print('   No clusters found.')
 
 def deleteOption(session, bucket):
   listKOPSclusters(session, bucket)
-  name = raw_input('\n FQDN of cluster to delete: ') or ''
-  print '\n Are you SURE you want to delete cluster %s?' % name
-  verification = raw_input(' You must type "yes" to verify: ') or 'no'
+  name = input('\n FQDN of cluster to delete: ') or ''
+  print('\n Are you SURE you want to delete cluster {0:s}?'.format(name))
+  verification = input(' You must type "yes" to verify: ') or 'no'
   if verification == 'yes' or verification == 'Yes':
     try:
       deleteCluster(session, name, bucket)
     except Exception as err:
-      print err
+      print(err)
       sys.exit(1)
   else:
-    print "\n You must type out 'yes' to confirm deletion. Let's try again...."
+    print("\n You must type out 'yes' to confirm deletion. Let's try again....")
     deleteOption(session, bucket)
 
 def deleteCluster(session, name, bucket):

@@ -19,31 +19,31 @@ credentials to ensure KOPS automation operates as principle of
 least priviledge.
 
 If you've already created a KOPS admin user, supply the generated
-Access Keys as environment variables 'AWS_ACCESS_KEY_ID' and
-'AWS_SECRET_ACCESS_KEY' on start of a Dispatch container instance:
+Access Key as the environment variable 'AWS_ACCESS_KEY_ID'
+on start of a Dispatch container instance:
 
 docker run --rm -it \\
 -e AWS_ACCESS_KEY_ID="<access_key_id>" \\
--e AWS_SECRET_ACCESS_KEY="<secret_access_key>" \\
+-e AWS_SECRET_ACCESS_KEY="" \\
 -v $HOME:/root \\
-christiantragesser/dispatch
+registry.gitlab.com/christiantragesser/dispatch
 
 ******************************************************************
 '''
 
-print '''
+print('''
  ______  _____ _______  _____  _______ _______ _______ _     _
  |     \   |   |______ |_____] |_____|    |    |       |_____|
  |_____/ __|__ ______| |       |     |    |    |______ |     |
 
-'''
+''')
 try:
   onboard = False
   if access_key_id is None:
-    print welcome
-    print '***: KOPS inititialization :***'
+    print(welcome)
+    print('***: KOPS inititialization :***')
     onboard = True
-    access_key_id = raw_input('Please enter admin AWS Access Key ID: ')
+    access_key_id = input('Please enter admin AWS Access Key ID: ')
   
   if secret_access_key is None or secret_access_key == '':
     secret_access_key = getpass('Please enter admin AWS Secret Access Key(masked input): ')
@@ -52,40 +52,40 @@ try:
   try:
     init.exerciseCreds(kopsCreds)
   except:
-    print "\n - There is an issue with the provided Access Key credentials.\n"
+    print("\n - There is an issue with the provided Access Key credentials.\n")
     sys.exit(1)
   
   if user_name is None:
-    user_name = raw_input('Please enter your username: ')
+    user_name = input('Please enter your username: ')
   
   if org is None:
-    org = raw_input('Please enter your organization ID: ')
+    org = input('Please enter your organization ID: ')
   
   userDetail = init.kopsDeps(kopsCreds, user_name, org)
   
   if onboard is True and userDetail['AccessKeyId'] is not None:
-    print '''***: KOPS inititialization complete :***
+    print('''***: KOPS inititialization complete :***
   
       Use the docker command below to securely operate KOPS:
       (you recorded the Secret Access Key, right?)
   
       docker run --rm -it \\
-      -e AWS_ACCESS_KEY_ID="%s" \\
+      -e AWS_ACCESS_KEY_ID="{0:s}" \\
       -e AWS_SECRET_ACCESS_KEY="" \\
-      -e NAME="%s" \\
-      -e ORG="%s" \\
+      -e NAME="{1:s}" \\
+      -e ORG="{2:s}" \\
       -v $HOME:/root \\
-      christiantragesser/dispatch
-    ''' % (userDetail['AccessKeyId'], user_name, org)
+      registry.gitlab.com/christiantragesser/dispatch
+    '''.format(userDetail['AccessKeyId'], user_name, org))
     sys.exit(0)
   
-  print'''Dispatch Menu:
+  print('''Dispatch Menu:
     [1] Create new KOPS cluster
     [2] List organization clusters
     [3] Delete an existing KOPS cluster
     [Q] Quit
     [*] Just give me a shell already!
-  '''
+  ''')
   
   choice = {
     '1': kops.createOption,
@@ -93,11 +93,11 @@ try:
     '3': kops.deleteOption
   }
   
-  option = raw_input(' Please select an [option]: ') or '*'
+  option = input(' Please select an [option]: ') or '*'
   if option == 'Q' or option == 'q':
     sys.exit(0)
   else:
     action = choice.get(option, kops.giveMeShell)
     action(kopsCreds, userDetail['bucket'])
 except KeyboardInterrupt:
-  print "\n\n Keyboard interuption, we gone!"
+  print("\n\n Keyboard interuption, we gone!")

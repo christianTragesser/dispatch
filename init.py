@@ -79,20 +79,20 @@ def setCreds(access_key_id, secret_access_key):
     
 
 def exerciseCreds(session):
-    print '\n    Testing provided credentials...'
+    print('\n    Testing provided credentials...')
     iam = session.client('iam')
     s3 = session.client('s3')
     try:
         iam.list_users()
         iam.list_groups()
         s3.list_buckets()
-        print '    ...credentials successfully authenticated.\n'
+        print('    ...credentials successfully authenticated.\n')
     except Exception as e:
-        print e
+        print(e)
         return sys.exit()
 
 def kopsDeps(session, name, org):
-    print '\n KOPS dependency checks:'
+    print('\n KOPS dependency checks:')
     iam = session.client('iam')
     s3 = session.client('s3')
 
@@ -106,9 +106,9 @@ def kopsDeps(session, name, org):
     #Create KOPS S3 bucket
     buckets = getS3buckets(session)
     if kopsBucket in buckets:
-        print(' . Using s3://%s for KOPS state.') % kopsBucket
+        print(' . Using s3://{0:s} for KOPS state.'.format(kopsBucket))
     else:
-        print ' + Creating KOPS state S3 bucket: %s' % kopsBucket
+        print(' + Creating KOPS state S3 bucket: {0:s}'.format(kopsBucket))
         s3.create_bucket(ACL='private', Bucket=kopsBucket, )
         s3.put_bucket_encryption(
             Bucket=kopsBucket,
@@ -130,9 +130,9 @@ def kopsDeps(session, name, org):
     #Create kops IAM group
     groups = getGroups(session)
     if iamGroup in groups:
-        print' . IAM group %s exists.' % iamGroup
+        print(' . IAM group {0:s} exists.'.format(iamGroup))
     else:
-        print ' + Creating IAM group: %s' % iamGroup
+        print(' + Creating IAM group: {0:s}'.format(iamGroup))
         iam.create_group(GroupName=iamGroup)
     
     #Attach managed AWS policies to group
@@ -141,25 +141,25 @@ def kopsDeps(session, name, org):
     #Create kops IAM user
     users = getUsers(session)
     if iamUser in users:
-        print' . IAM user %s exists.' % iamUser
+        print(' . IAM user {0:s} exists.'.format(iamUser))
         userDetails['AccessKeyId'] = None
         userDetails['SecretAccessKey'] = None
     else:
-        print ' + Creating KOPS admin user: %s' % iamUser 
+        print(' + Creating KOPS admin user: {0:s}'.format(iamUser))
         iam.create_user(UserName=iamUser)
         response = iam.create_access_key(UserName=iamUser)
         userDetails['AccessKeyId'] = response['AccessKey']['AccessKeyId']
         userDetails['SecretAccessKey'] = response['AccessKey']['SecretAccessKey']
-        print' + %s Access Key ID: %s' % (iamUser, response['AccessKey']['AccessKeyId'])
-        print' + %s Secret Access Key: %s' % (iamUser, response['AccessKey']['SecretAccessKey'])
-        print'   *** Record the user Secret Access Key, it cannot be retrieved again! ***'
+        print(' + {0:s} Access Key ID: {1:s}').format(iamUser, response['AccessKey']['AccessKeyId'])
+        print(' + {0:s} Secret Access Key: {1:s}').format(iamUser, response['AccessKey']['SecretAccessKey'])
+        print('   *** Record the user Secret Access Key, it cannot be retrieved again! ***')
     
     #Add kops IAM user to KOPS deployment group
     userGroups = getUserGroups(session, iamUser)
     if iamGroup in userGroups:
-        print ' . %s user is in group %s\n' % (iamUser, iamGroup)
+        print(' . {0:s} user is in group {1:s}\n'.format(iamUser, iamGroup))
     else:
-        print ' + Adding %s user to KOPS deployment group %s\n' % (iamUser, iamGroup)
+        print(' + Adding {0:s} user to KOPS deployment group {1:s}\n'.format(iamUser, iamGroup))
         iam.add_user_to_group(GroupName=iamGroup, UserName=iamUser)
     
     return userDetails

@@ -1,4 +1,4 @@
-FROM python:2.7-alpine
+FROM python:3-alpine
 
 #install KOPS
 RUN apk add --no-cache curl openssh-keygen && \
