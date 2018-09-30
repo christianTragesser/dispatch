@@ -8,5 +8,5 @@ A CLI utility for deploying [KOPS](https://github.com/kubernetes/kops) [Kubernet
 ### Initialization
 Dispatch automates the creation of a KOPS admin user with minimum privileges needed for KOPS cluster administration. Run a container instance to get started:
 ```
-docker run --rm -it christiantragesser/dispatch
+docker run --rm -it registry.gitlab.com/christiantragesser/dispatch
 ```
