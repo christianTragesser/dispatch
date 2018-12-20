@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import os
 from argparse import ArgumentParser
-from dind import Pipeline
+from pyplineCI import Pipeline
 
 dirPath = os.path.dirname(os.path.realpath(__file__))
 pipeline = Pipeline(dockerRegistry='registry.gitlab.com/christiantragesser')
@@ -22,8 +22,9 @@ def test():
     }
     print('Starting tests:')
     pipeline.buildImage(dirPath, localTag)
-    pipeline.runContainerInteractive(image=localTag,
-                                     name='dispatch-test', working_dir=testDir, volumes=volumes, command=['/bin/sh', '-C', '/tmp/test/test_basic.sh'])
+    pipeline.runI(image=localTag, name='dispatch-test',
+                  working_dir=testDir, volumes=volumes,
+                  command=['/bin/sh', '-C', '/tmp/test/test_basic.sh'])
     print('Testing complete')
 
 def local():
@@ -32,13 +33,12 @@ def local():
     }
     print('Initializing locally built instance:')
     pipeline.buildImage(dirPath,localTag)
-    pipeline.runContainerInteractive(image=localTag,
-                                     name='dispatch-local', working_dir='/tmp', volumes=volumes, command='/bin/sh')
+    pipeline.runI(image=localTag, name='dispatch-local',
+                  working_dir='/tmp', volumes=volumes, command='/bin/sh')
 
 def main():
     parser = ArgumentParser(prog='ci-py')
-    parser.add_argument('stage', type=str,
-                        help='run pipeline stage; test, local')
+    parser.add_argument('stage', type=str, help='run pipeline stage; test, local')
     args = parser.parse_args()
     ci(args.stage)
 

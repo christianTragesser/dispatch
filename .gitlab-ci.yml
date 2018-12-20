@@ -1,4 +1,4 @@
-image: registry.gitlab.com/christiantragesser/dind-py:3
+image: registry.gitlab.com/christiantragesser/pypline-ci:3
 
 variables:
   DOCKER_DRIVER: overlay2
