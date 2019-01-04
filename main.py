@@ -12,15 +12,13 @@ user_name = os.environ['NAME'] if 'NAME' in os.environ else None
 
 welcome = ''' 
 ******************************************************************
-Thank you for using Dispatch. To begin, we'll need to create
-your KOPS administration IAM user and Access Keys.  It is
-suggested to use the newly created IAM user(kops-admin-<user>)
-credentials to ensure KOPS automation operates as principle of
-least priviledge.
+Thank you for using Dispatch. It is suggested to use a
+Dispatch specific IAM user(dispatch-kops-admin-<user>) to ensure
+KOPS automation operates as principle of least priviledge.
 
-If you've already created a KOPS admin user, supply the generated
+If you've already created a Dispatch admin user, supply the generated
 Access Key as the environment variable 'AWS_ACCESS_KEY_ID'
-on start of a Dispatch container instance:
+on initiation of a Dispatch container instance:
 
 docker run --rm -it \\
 -e AWS_ACCESS_KEY_ID="<access_key_id>" \\
@@ -62,7 +60,6 @@ try:
     org = input('Please enter your organization ID: ')
   
   userDetail = init.kopsDeps(kopsCreds, user_name, org)
-  
   if onboard is True and userDetail['AccessKeyId'] is not None:
     print('''***: KOPS inititialization complete :***
   
@@ -79,7 +76,7 @@ try:
     '''.format(userDetail['AccessKeyId'], user_name, org))
     sys.exit(0)
   
-  print('''Dispatch Menu:
+  print('''\nDispatch Menu:
     [1] Create new KOPS cluster
     [2] List organization clusters
     [3] Delete an existing KOPS cluster
