@@ -3,9 +3,6 @@ import boto3
 import os
 import sys
 
-iam = boto3.client('iam')
-s3 = boto3.client('s3')
-
 managedPolicies = ['AmazonEC2FullAccess', 'AmazonRoute53FullAccess', 'AmazonS3FullAccess', 'IAMFullAccess', 'AmazonVPCFullAccess']
 arn_prefix = 'arn:aws:iam::aws:policy/'
 
@@ -70,10 +67,11 @@ def assignPolicies(session, group):
             iam.attach_group_policy(GroupName=group, PolicyArn=arn) 
 
 
-def setCreds(access_key_id, secret_access_key):
+def setCreds(access_key_id, secret_access_key, session_token):
     session = boto3.Session(
         aws_access_key_id=access_key_id,
         aws_secret_access_key=secret_access_key,
+        aws_session_token=session_token
     )
     return session
     

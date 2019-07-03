@@ -7,6 +7,7 @@ import kops
 
 access_key_id = os.environ['AWS_ACCESS_KEY_ID'] if 'AWS_ACCESS_KEY_ID' in os.environ else None
 secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY'] if 'AWS_SECRET_ACCESS_KEY' in os.environ else None
+session_token = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.environ else None
 org = os.environ['ORG'] if 'ORG' in os.environ else None
 user_name = os.environ['NAME'] if 'NAME' in os.environ else None
 
@@ -46,7 +47,10 @@ try:
   if secret_access_key is None or secret_access_key == '':
     secret_access_key = getpass('Please enter admin AWS Secret Access Key(masked input): ')
     
-  kopsCreds = init.setCreds(access_key_id, secret_access_key)
+  if session_token is None or session_token == '':
+    session_token = getpass('Please enter Session Token(masked input): ')
+
+  kopsCreds = init.setCreds(access_key_id, secret_access_key, session_token)
   try:
     init.exerciseCreds(kopsCreds)
   except:

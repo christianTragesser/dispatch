@@ -3,11 +3,14 @@ from subprocess import call
 import boto3
 from botocore.exceptions import EndpointConnectionError
 
+k8s_version = '1.14.2'
+
 def giveMeShell(session, bucket):
   creds = session.get_credentials()
   creds = creds.get_frozen_credentials()
   os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
   os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
+  os.environ['AWS_SESSION_TOKEN'] = creds.token
   os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
   os.system('/bin/sh')
 
@@ -93,13 +96,15 @@ def createOption(session, bucket):
     print('exiting.')
     sys.exit(0)
 
+
 def createCluster(session, name, bucket, azs, node_size):
   creds = session.get_credentials()
   creds = creds.get_frozen_credentials()
   os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
   os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
+  os.environ['AWS_SESSION_TOKEN'] = creds.token
   os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
-
+  
   labels = 'owner={0:s}, CreatedBy=Dispatch'.format(name)
   print('Creating cluster {0:s}'.format(name))
   print('Using KOPS store @ s3://{0:s} \n'.format(bucket))
@@ -108,11 +113,13 @@ def createCluster(session, name, bucket, azs, node_size):
     '--zones='+azs[0],
     '--node-size='+node_size['instance_size'],
     '--topology=private',
+    '--kubernetes-version='+k8s_version,
     '--networking=weave',
     '--cloud-labels='+labels,
     '--name='+name,
     '--state=s3://'+bucket,
     '--ssh-public-key=~/.ssh/kops_rsa.pub',
+    '--bastion',
     '--authorization=RBAC',
     '--yes'
   ])
