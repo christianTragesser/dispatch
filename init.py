@@ -100,12 +100,9 @@ def verifyCreation(item):
 
 def kopsDeps(session, name, org):
     print('\n KOPS dependency checks:')
-    iam = session.client('iam')
     s3 = session.client('s3')
 
-    iamGroup = 'dispatch-k8s-deployments'
-    iamUser = 'dispatch-kops-admin-'+name
-    kopsBucket = org+'-dispatch-kops-state-store'
+    kopsBucket = name+'-dispatch-kops-state-store'
 
     userDetails = {}
     userDetails['bucket'] = kopsBucket
@@ -134,48 +131,4 @@ def kopsDeps(session, name, org):
                          VersioningConfiguration={'Status': 'Enabled'}
         )
 
-    #Create kops IAM group
-    groups = getGroups(session)
-    if iamGroup in groups:
-        print(' . IAM group {0:s} exists.'.format(iamGroup))
-    else:
-        verifyGroup = verifyCreation('group')
-        if verifyGroup:
-            print(' + Creating IAM group: {0:s}'.format(iamGroup))
-            iam.create_group(GroupName=iamGroup)
-            #Attach managed AWS policies to group
-            assignPolicies(session, iamGroup)
-        else:
-            print('\n ! Proceeding with admin IAM credentials !\n')
-
-    #Create kops IAM user
-    users = getUsers(session)
-    if iamUser in users:
-        print(' . IAM user {0:s} exists.'.format(iamUser))
-        userDetails['AccessKeyId'] = None
-        userDetails['SecretAccessKey'] = None
-    else:
-        if verifyGroup:
-            verifyUser = verifyCreation('user')
-            if verifyUser:
-                print(' + Creating KOPS admin user: {0:s}'.format(iamUser))
-                iam.create_user(UserName=iamUser)
-                response = iam.create_access_key(UserName=iamUser)
-                userDetails['AccessKeyId'] = response['AccessKey']['AccessKeyId']
-                userDetails['SecretAccessKey'] = response['AccessKey']['SecretAccessKey']
-                print(' + {0:s} Access Key ID: {1:s}'.format(iamUser, userDetails['AccessKeyId']))
-                print(' + {0:s} Secret Access Key: {1:s}'.format(iamUser, userDetails['SecretAccessKey']))
-                print('   *** Record the user Secret Access Key, it cannot be retrieved again! ***')
-                #Add kops IAM user to KOPS deployment group
-                userGroups = getUserGroups(session, iamUser)
-                if iamGroup in userGroups:
-                    print(' . {0:s} user is in group {1:s}\n'.format(iamUser, iamGroup))
-                else:
-                    print(' + Adding {0:s} user to KOPS deployment group {1:s}\n'.format(iamUser, iamGroup))
-                    iam.add_user_to_group(GroupName=iamGroup, UserName=iamUser)
-            else:
-                userDetails['AccessKeyId'] = None
-        else:
-            userDetails['AccessKeyId'] = None
-    
     return userDetails
