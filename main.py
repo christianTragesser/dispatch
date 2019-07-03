@@ -8,22 +8,21 @@ import kops
 access_key_id = os.environ['AWS_ACCESS_KEY_ID'] if 'AWS_ACCESS_KEY_ID' in os.environ else None
 secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY'] if 'AWS_SECRET_ACCESS_KEY' in os.environ else None
 session_token = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.environ else None
-org = os.environ['ORG'] if 'ORG' in os.environ else None
-user_name = os.environ['NAME'] if 'NAME' in os.environ else None
+user_name = os.environ['USER'] if 'USER' in os.environ else None
 
 welcome = ''' 
 ******************************************************************
-Thank you for using Dispatch. It is suggested to use a
-Dispatch specific IAM user(dispatch-kops-admin-<user>) to ensure
-KOPS automation operates as principle of least priviledge.
+Thank you for using Dispatch. In the interest of security, only
+temporary AWS keys with session token can be used to provision
+clusters.(Your federated login must have the appropriate access) 
 
-If you've already created a Dispatch admin user, supply the generated
-Access Key as the environment variable 'AWS_ACCESS_KEY_ID'
-on initiation of a Dispatch container instance:
+Supplying your Access Key as environment variable
+'AWS_ACCESS_KEY_ID' and username as environment variable 'USER'
+will prevent this message from showing on Dispatch initiation:
 
 docker run --rm -it \\
 -e AWS_ACCESS_KEY_ID="<access_key_id>" \\
--e AWS_SECRET_ACCESS_KEY="" \\
+-e USER="<username>" \\
 -v $HOME:/root \\
 registry.gitlab.com/christiantragesser/dispatch
 
@@ -37,15 +36,14 @@ print('''
 
 ''')
 try:
-  onboard = False
-  if access_key_id is None:
+  if access_key_id is None and user_name is None:
     print(welcome)
+  if access_key_id is None:
     print('***: KOPS inititialization :***')
-    onboard = True
-    access_key_id = input('Please enter admin AWS Access Key ID: ')
+    access_key_id = input('Please enter your AWS Access Key ID: ')
   
   if secret_access_key is None or secret_access_key == '':
-    secret_access_key = getpass('Please enter admin AWS Secret Access Key(masked input): ')
+    secret_access_key = getpass('Please enter AWS Secret Access Key(masked input): ')
     
   if session_token is None or session_token == '':
     session_token = getpass('Please enter Session Token(masked input): ')
@@ -60,25 +58,7 @@ try:
   if user_name is None:
     user_name = input('Please enter your username: ')
   
-  if org is None:
-    org = input('Please enter your organization ID: ')
-  
-  userDetail = init.kopsDeps(kopsCreds, user_name, org)
-  if onboard is True and userDetail['AccessKeyId'] is not None:
-    print('''***: KOPS inititialization complete :***
-  
-      Use the docker command below to securely operate KOPS:
-      (you recorded the Secret Access Key, right?)
-  
-      docker run --rm -it \\
-      -e AWS_ACCESS_KEY_ID="{0:s}" \\
-      -e AWS_SECRET_ACCESS_KEY="" \\
-      -e NAME="{1:s}" \\
-      -e ORG="{2:s}" \\
-      -v $HOME:/root \\
-      registry.gitlab.com/christiantragesser/dispatch
-    '''.format(userDetail['AccessKeyId'], user_name, org))
-    sys.exit(0)
+  userDetail = init.kopsDeps(kopsCreds, user_name)
   
   print('''\nDispatch Menu:
     [1] Create new KOPS cluster

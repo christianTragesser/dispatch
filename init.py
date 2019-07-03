@@ -98,7 +98,7 @@ def verifyCreation(item):
     else:
         return False
 
-def kopsDeps(session, name, org):
+def kopsDeps(session, name):
     print('\n KOPS dependency checks:')
     s3 = session.client('s3')
 
