@@ -11,14 +11,16 @@ session_token = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.env
 user_name = os.environ['USER'] if 'USER' in os.environ else None
 
 welcome = '''
-******************************************************************
+*********************************************************************
 Thank you for using Dispatch. In the interest of security, only
-temporary AWS keys with session token can be used to provision
-clusters.(Your federated login must have the appropriate access)
+temporary AWS credentials can be used to provision clusters.  See the
+AWS documentation for creating temporary credentials for account IAM
+users.
+(Your IAM user needs appropriate access to provision all components)
 
-Supplying your Access Key as environment variable
-'AWS_ACCESS_KEY_ID' and username as environment variable 'USER'
-will prevent this message from showing on Dispatch initiation:
+Supplying your Access Key as environment variable 'AWS_ACCESS_KEY_ID'
+and username as environment variable 'USER' will prevent this message
+from showing on Dispatch initiation:
 
 docker run --rm -it \\
 -e AWS_ACCESS_KEY_ID="<access_key_id>" \\
@@ -26,7 +28,7 @@ docker run --rm -it \\
 -v $HOME:/root \\
 registry.gitlab.com/christiantragesser/dispatch
 
-******************************************************************
+*********************************************************************
 '''
 
 print('''
