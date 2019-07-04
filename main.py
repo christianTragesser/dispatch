@@ -38,6 +38,7 @@ print('''
 try:
   if access_key_id is None and user_name is None:
     print(welcome)
+
   if access_key_id is None:
     print('***: KOPS inititialization :***')
     access_key_id = input('Please enter your AWS Access Key ID: ')
@@ -49,6 +50,7 @@ try:
     session_token = getpass('Please enter Session Token(masked input): ')
 
   kopsCreds = init.setCreds(access_key_id, secret_access_key, session_token)
+
   try:
     init.exerciseCreds(kopsCreds)
   except:
@@ -58,6 +60,8 @@ try:
   if user_name is None:
     user_name = input('Please enter your username: ')
   
+  print('\n KOPS dependency checks:')
+  init.must_mount(access_key_id, user_name)
   userDetail = init.kopsDeps(kopsCreds, user_name)
   
   print('''\nDispatch Menu:

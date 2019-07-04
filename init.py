@@ -6,6 +6,7 @@ import sys
 managedPolicies = ['AmazonEC2FullAccess', 'AmazonRoute53FullAccess', 'AmazonS3FullAccess', 'IAMFullAccess', 'AmazonVPCFullAccess']
 arn_prefix = 'arn:aws:iam::aws:policy/'
 
+
 def getUsers(session):
     iam = session.client('iam')
     
@@ -15,6 +16,7 @@ def getUsers(session):
         for user_name in response['Users']:
             users.append(user_name['UserName'])
     return users
+
 
 def getGroups(session):
     iam = session.client('iam')
@@ -26,6 +28,7 @@ def getGroups(session):
             groups.append(group_name['GroupName'])
     return groups
 
+
 def getUserGroups(session, user):
     iam = session.client('iam')
 
@@ -34,6 +37,7 @@ def getUserGroups(session, user):
     for group in response['Groups']:
         userGroups.append(group['GroupName'])
     return userGroups
+
 
 def getAttachedPolicies(session, group):
     iam = session.client('iam')
@@ -44,6 +48,7 @@ def getAttachedPolicies(session, group):
         policies.append(policy['PolicyName'])
     return policies
 
+
 def getS3buckets(session):
     s3 = session.client('s3')
 
@@ -52,6 +57,7 @@ def getS3buckets(session):
     for bucket in buckets['Buckets']:
         nameList.append(bucket['Name'])
     return nameList
+
 
 def assignPolicies(session, group):
     iam = session.client('iam')
@@ -89,6 +95,7 @@ def exerciseCreds(session):
         print(e)
         return sys.exit()
 
+
 def verifyCreation(item):
     print('\n + Dispatch recommends creating an IAM {} specific\n'
           '   to KOPS administration to ensure principal of least privilege.\n'.format(str(item)))
@@ -98,8 +105,26 @@ def verifyCreation(item):
     else:
         return False
 
+
+def must_mount(access_key, user):
+    if not os.path.isdir("/root/.kube"):
+        mount_message = '''
+        You must mount /root to your home directory.
+        Use the docker command below to properly operate KOPS:
+          
+        docker run --rm -it \\
+        -e AWS_ACCESS_KEY_ID="{0}" \\
+        -e USER="{1}" \\
+        -v $HOME:/root \\
+        registry.gitlab.com/christiantragesser/dispatch
+        '''.format(access_key, user)
+        print(mount_message)
+        sys.exit(0)
+    else:
+        print(' . Found container mount for /root.')
+    
+
 def kopsDeps(session, name):
-    print('\n KOPS dependency checks:')
     s3 = session.client('s3')
 
     kopsBucket = name+'-dispatch-kops-state-store'
