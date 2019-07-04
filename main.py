@@ -16,6 +16,7 @@ Thank you for using Dispatch. In the interest of security, only
 temporary AWS credentials can be used to provision clusters.  See the
 AWS documentation for creating temporary credentials for account IAM
 users.
+https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html
 (Your IAM user needs appropriate access to provision all components)
 
 Supplying your Access Key as environment variable 'AWS_ACCESS_KEY_ID'
