@@ -10,11 +10,11 @@ secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY'] if 'AWS_SECRET_ACCESS_KE
 session_token = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.environ else None
 user_name = os.environ['USER'] if 'USER' in os.environ else None
 
-welcome = ''' 
+welcome = '''
 ******************************************************************
 Thank you for using Dispatch. In the interest of security, only
 temporary AWS keys with session token can be used to provision
-clusters.(Your federated login must have the appropriate access) 
+clusters.(Your federated login must have the appropriate access)
 
 Supplying your Access Key as environment variable
 'AWS_ACCESS_KEY_ID' and username as environment variable 'USER'
@@ -36,53 +36,53 @@ print('''
 
 ''')
 try:
-  if access_key_id is None and user_name is None:
-    print(welcome)
+    if access_key_id is None and user_name is None:
+        print(welcome)
 
-  if access_key_id is None:
-    print('***: KOPS inititialization :***')
-    access_key_id = input('Please enter your AWS Access Key ID: ')
-  
-  if secret_access_key is None or secret_access_key == '':
-    secret_access_key = getpass('Please enter AWS Secret Access Key(masked input): ')
-    
-  if session_token is None or session_token == '':
-    session_token = getpass('Please enter Session Token(masked input): ')
+    if access_key_id is None:
+        print('***: KOPS inititialization :***')
+        access_key_id = input('Please enter your AWS Access Key ID: ')
 
-  kopsCreds = init.setCreds(access_key_id, secret_access_key, session_token)
+    if secret_access_key is None or secret_access_key == '':
+        secret_access_key = getpass('Please enter AWS Secret Access Key(masked input): ')
 
-  try:
-    init.exerciseCreds(kopsCreds)
-  except:
-    print("\n - There is an issue with the provided Access Key credentials.\n")
-    sys.exit(1)
-  
-  if user_name is None:
-    user_name = input('Please enter your username: ')
-  
-  print('\n KOPS dependency checks:')
-  init.must_mount(access_key_id, user_name)
-  userDetail = init.kopsDeps(kopsCreds, user_name)
-  
-  print('''\nDispatch Menu:
-    [1] Create new KOPS cluster
-    [2] List organization clusters
-    [3] Delete an existing KOPS cluster
-    [Q] Quit
-    [*] Just give me a shell already!
-  ''')
-  
-  choice = {
-    '1': kops.createOption,
-    '2': kops.listKOPSclusters,
-    '3': kops.deleteOption
-  }
-  
-  option = input(' Please select an [option]: ') or '*'
-  if option == 'Q' or option == 'q':
-    sys.exit(0)
-  else:
-    action = choice.get(option, kops.giveMeShell)
-    action(kopsCreds, userDetail['bucket'])
+    if session_token is None or session_token == '':
+        session_token = getpass('Please enter Session Token(masked input): ')
+
+    kopsCreds = init.setCreds(access_key_id, secret_access_key, session_token)
+
+    try:
+        init.exerciseCreds(kopsCreds)
+    except Exception:
+        print("\n - There is an issue with the provided Access Key credentials.\n")
+        sys.exit(1)
+
+    if user_name is None:
+        user_name = input('Please enter your username: ')
+
+    print('\n KOPS dependency checks:')
+    init.mustMount(access_key_id, user_name)
+    userDetail = init.kopsDeps(kopsCreds, user_name)
+
+    print('''\nDispatch Menu:
+      [1] Create new KOPS cluster
+      [2] List organization clusters
+      [3] Delete an existing KOPS cluster
+      [Q] Quit
+      [*] Just give me a shell already!
+    ''')
+
+    choice = {
+      '1': kops.createOption,
+      '2': kops.listKOPSclusters,
+      '3': kops.deleteOption
+    }
+
+    option = input(' Please select an [option]: ') or '*'
+    if option == 'Q' or option == 'q':
+        sys.exit(0)
+    else:
+        action = choice.get(option, kops.giveMeShell)
+        action(kopsCreds, userDetail['bucket'])
 except KeyboardInterrupt:
-  print("\n\n Keyboard interuption, we gone!")
+    print("\n\n Keyboard interuption, we gone!")

@@ -9,7 +9,7 @@ arn_prefix = 'arn:aws:iam::aws:policy/'
 
 def getUsers(session):
     iam = session.client('iam')
-    
+
     users = []
     paginator = iam.get_paginator('list_users')
     for response in paginator.paginate():
@@ -70,7 +70,7 @@ def assignPolicies(session, group):
     if flag:
         for policy in managedPolicies:
             arn = arn_prefix + policy
-            iam.attach_group_policy(GroupName=group, PolicyArn=arn) 
+            iam.attach_group_policy(GroupName=group, PolicyArn=arn)
 
 
 def setCreds(access_key_id, secret_access_key, session_token):
@@ -80,7 +80,7 @@ def setCreds(access_key_id, secret_access_key, session_token):
         aws_session_token=session_token
     )
     return session
-    
+
 
 def exerciseCreds(session):
     print('\n    Testing provided credentials...')
@@ -106,12 +106,12 @@ def verifyCreation(item):
         return False
 
 
-def must_mount(access_key, user):
+def mustMount(access_key, user):
     if not os.path.isdir("/root/.kube"):
         mount_message = '''
         You must mount /root to your home directory.
         Use the docker command below to properly operate KOPS:
-          
+
         docker run --rm -it \\
         -e AWS_ACCESS_KEY_ID="{0}" \\
         -e USER="{1}" \\
@@ -122,7 +122,7 @@ def must_mount(access_key, user):
         sys.exit(0)
     else:
         print(' . Found container mount for /root.')
-    
+
 
 def kopsDeps(session, name):
     s3 = session.client('s3')
@@ -132,7 +132,7 @@ def kopsDeps(session, name):
     userDetails = {}
     userDetails['bucket'] = kopsBucket
 
-    #Create KOPS S3 bucket
+    # Create KOPS S3 bucket
     buckets = getS3buckets(session)
     if kopsBucket in buckets:
         print(' . Using s3://{0:s} for KOPS state.'.format(kopsBucket))
@@ -152,8 +152,8 @@ def kopsDeps(session, name):
             }
         )
         s3.put_bucket_versioning(
-                         Bucket=kopsBucket,
-                         VersioningConfiguration={'Status': 'Enabled'}
+            Bucket=kopsBucket,
+            VersioningConfiguration={'Status': 'Enabled'}
         )
 
     return userDetails
