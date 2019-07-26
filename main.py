@@ -67,18 +67,20 @@ try:
     init.mustMount(access_key_id, user_name)
     userDetail = init.kopsDeps(kopsCreds, user_name)
 
+    kops.listKOPSclusters(kopsCreds, userDetail['bucket'])
+
     print('''\nDispatch Menu:
-      [1] Create new KOPS cluster
-      [2] List organization clusters
-      [3] Delete an existing KOPS cluster
-      [Q] Quit
-      [*] Just give me a shell already!
+      [C]reate new KOPS cluster
+      [D]elete an existing KOPS cluster
+      [Q]uit
+      [*] Shell session
     ''')
 
     choice = {
-      '1': kops.createOption,
-      '2': kops.listKOPSclusters,
-      '3': kops.deleteOption
+      'C': kops.createOption,
+      'c': kops.createOption,
+      'D': kops.deleteOption,
+      'd': kops.deleteOption
     }
 
     option = input(' Please select an [option]: ') or '*'
