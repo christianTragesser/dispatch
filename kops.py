@@ -6,13 +6,22 @@ from botocore.exceptions import EndpointConnectionError
 k8s_version = '1.14.2'
 
 
-def giveMeShell(session, bucket):
-    creds = session.get_credentials()
-    creds = creds.get_frozen_credentials()
-    os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
-    os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
-    os.environ['AWS_SESSION_TOKEN'] = creds.token
+def getCreds(session):
+    session_creds = session.get_credentials()
+    frozen_creds = session_creds.get_frozen_credentials()
+    return frozen_creds
+
+
+def setEnvVars(credentials, bucket):
+    os.environ['AWS_ACCESS_KEY_ID'] = credentials.access_key
+    os.environ['AWS_SECRET_ACCESS_KEY'] = credentials.secret_key
+    os.environ['AWS_SESSION_TOKEN'] = credentials.token
     os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
+
+
+def giveMeShell(session, bucket):
+    creds = getCreds(session)
+    setEnvVars(creds, bucket)
     os.system('/bin/sh')
 
 
@@ -32,7 +41,6 @@ def kopsSSHkey():
 
 def describeAzs(session, region):
     ec2 = session.client('ec2', region_name=region)
-
     response = ec2.describe_availability_zones(
         Filters=[
           {
@@ -46,7 +54,6 @@ def describeAzs(session, region):
     zones = []
     for az in response['AvailabilityZones']:
         zones.append(az['ZoneName'])
-
     return zones
 
 
@@ -65,9 +72,7 @@ def setClusterSize():
       'l': {'label': 'Large', 'instance_size': 'm4.2xlarge'},
       'L': {'label': 'Large', 'instance_size': 'm4.2xlarge'}
     }
-
     size = sizes.get(option, {'label': 'Small', 'instance_size': 't2.medium'})
-
     return size
 
 
@@ -103,17 +108,11 @@ def createOption(session, bucket):
 
 
 def createCluster(session, name, bucket, azs, node_size):
-    creds = session.get_credentials()
-    creds = creds.get_frozen_credentials()
-    os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
-    os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
-    os.environ['AWS_SESSION_TOKEN'] = creds.token
-    os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
-
+    creds = getCreds(session)
+    setEnvVars(creds, bucket)
     labels = 'owner={0:s}, CreatedBy=Dispatch'.format(name)
     print('Creating cluster {0:s}'.format(name))
     print('Using KOPS store @ s3://{0:s} \n'.format(bucket))
-
     kops_command = ['kops', 'create', 'cluster', '--zones='+azs[0],
                     '--node-size='+node_size['instance_size'],
                     '--topology=private',
@@ -126,7 +125,7 @@ def createCluster(session, name, bucket, azs, node_size):
                     '--authorization=RBAC',
                     '--yes',
                     '--bastion']
-    # if using gossip protocol domain, do not provision a bastion host 
+    # if using gossip protocol domain, do not provision a bastion host
     if '.k8s.local' in name:
         del kops_command[-1]
     call(kops_command)
@@ -136,11 +135,11 @@ def listKOPSclusters(session, bucket):
     s3 = session.client('s3')
     response = s3.list_objects_v2(Bucket=bucket, Delimiter='/')
     if 'CommonPrefixes' in response:
-        print(' Existing KOPS clusters:')
+        print('\n Existing KOPS clusters:')
         for cluster in response['CommonPrefixes']:
             print('  - {0:s}'.format(cluster['Prefix'].replace('/', '')))
     else:
-        print('   No clusters found.')
+        print('\n Cluster list is empty.')
 
 
 def deleteOption(session, bucket):
@@ -160,12 +159,8 @@ def deleteOption(session, bucket):
 
 
 def deleteCluster(session, name, bucket):
-    creds = session.get_credentials()
-    creds = creds.get_frozen_credentials()
-    os.environ['AWS_ACCESS_KEY_ID'] = creds.access_key
-    os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secret_key
-    os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
-
+    creds = getCreds(session)
+    setEnvVars(creds, bucket)
     call(['kops', 'delete', 'cluster',
           '--name='+name,
           '--state=s3://'+bucket,
