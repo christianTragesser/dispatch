@@ -5,10 +5,12 @@ A CLI utility for deploying [KOPS](https://github.com/kubernetes/kops) [Kubernet
 ### Dependencies
 * [Temporary AWS credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html) with access equivalent to managed IAM policies `AmazonEC2FullAccess`, `AmazonRoute53FullAccess`, `AmazonS3FullAccess`, and `AmazonVPCFullAccess`
 * Docker
-* kubectl installed locally(kubectl config resides at `~/.kube`)
 
 ### Initialization
 Run a container instance to get started:
 ```
-docker run --rm -it registry.gitlab.com/christiantragesser/dispatch
+docker run --rm -it -v $HOME:/root registry.gitlab.com/christiantragesser/dispatch
 ```
+
+### CLI Tools
+`kubectl`, `kops`, and `awscli` command line clients are provided during a _Shell session_. 
