@@ -107,7 +107,9 @@ def verifyCreation(item):
 
 
 def mustMount(access_key, user):
-    if not os.path.isdir("/root/.kube"):
+    if os.path.isdir("/root/.kube") or os.path.isdir("/root/.ssh"):
+        print(' . Found container mount for /root.')
+    else:
         mount_message = '''
         You must mount /root to your home directory.
         Use the docker command below to properly operate KOPS:
@@ -120,8 +122,6 @@ def mustMount(access_key, user):
         '''.format(access_key, user)
         print(mount_message)
         sys.exit(0)
-    else:
-        print(' . Found container mount for /root.')
 
 
 def kopsDeps(session, name):
