@@ -5,7 +5,6 @@ from botocore.exceptions import EndpointConnectionError
 
 k8s_version = '1.14.2'
 
-
 def getCreds(session):
     session_creds = session.get_credentials()
     frozen_creds = session_creds.get_frozen_credentials()
@@ -76,6 +75,15 @@ def setClusterSize():
     return size
 
 
+def get_node_count():
+    option = input(' Compute node count(2): ') or '2'
+    try:
+        return int(option)
+    except ValueError:
+        print("    '{}' is not a valid count. Please provide an integer value for node count.".format(option))
+        get_node_count()
+
+
 def createOption(session, bucket):
     cluster_name = input('\n New cluster FQDN(dispatch.k8s.local): ') or 'dispatch.k8s.local'
     region = input(' AWS region(us-east-1): ') or 'us-east-1'
@@ -86,19 +94,21 @@ def createOption(session, bucket):
         createOption(session, bucket)
 
     node_size = setClusterSize()
+    node_count = get_node_count()
 
     print('''
     New cluster details:
       Cluster name: {0:s}
       Cluster size: {1:s}
-      AWS region: {2:s}
-    '''.format(cluster_name, node_size['label'], region))
+      Node count: {2:d}
+      AWS region: {3:s}
+    '''.format(cluster_name, node_size['label'], node_count, region))
     verification = input(' Create this cluster?(y/n): ') or 'n'
     if verification == 'y' or verification == 'Y':
         try:
             kopsSSHkey()
             print('Attempting createCluster function')
-            createCluster(session, cluster_name, bucket, azs, node_size)
+            createCluster(session, cluster_name, bucket, azs, node_size, node_count)
         except Exception as err:
             print(err)
             sys.exit(1)
@@ -107,7 +117,7 @@ def createOption(session, bucket):
         sys.exit(0)
 
 
-def createCluster(session, name, bucket, azs, node_size):
+def createCluster(session, name, bucket, azs, node_size, node_count):
     creds = getCreds(session)
     setEnvVars(creds, bucket)
     labels = 'owner={0:s}, CreatedBy=Dispatch'.format(name)
@@ -115,6 +125,7 @@ def createCluster(session, name, bucket, azs, node_size):
     print('Using KOPS store @ s3://{0:s} \n'.format(bucket))
     kops_command = ['kops', 'create', 'cluster', '--zones='+azs[0],
                     '--node-size='+node_size['instance_size'],
+                    '--node-count='+str(node_count),
                     '--topology=private',
                     '--kubernetes-version='+k8s_version,
                     '--networking=weave',
