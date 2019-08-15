@@ -9,6 +9,12 @@ chmod +x /usr/local/bin/kops
 RUN curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
 chmod +x /usr/local/bin/kubectl
 
+#install Helm
+RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d '/' -f 8 | sed 's/">redirected<//') && \
+    mkdir /opt/helm && \
+    curl https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz --directory /opt/helm && \
+    ln -s /opt/helm/linux-amd64/helm /usr/local/bin/helm
+
 #install aws utilities
 RUN pip install --no-cache-dir awscli boto3 && mkdir -p /opt/dispatch
 
