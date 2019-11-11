@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import os
 from argparse import ArgumentParser
 from pyplineCI import Pipeline
@@ -16,15 +15,14 @@ def ci(option):
     run()
 
 def test():
-    testDir = '/tmp/test'
+    testDir = '/tmp/'
     volumes = {
         dirPath: { 'bind': '/tmp', 'mode': 'rw'}
     }
     print('Starting tests:')
-    pipeline.buildImage(dirPath, localTag)
-    pipeline.runI(image=localTag, name='dispatch-test',
-                  working_dir=testDir, volumes=volumes,
-                  command=['/bin/sh', '-C', '/tmp/test/test_basic.sh'])
+    pipeline.build_image(dirPath, localTag)
+    pipeline.runi(image=localTag, name='dispatch-test',
+                  volumes=volumes, command=['/bin/sh', '-C', testDir+'/test/test_basic.sh'])
     print('Testing complete')
 
 def local():
@@ -32,8 +30,8 @@ def local():
         dirPath: { 'bind': '/tmp', 'mode': 'rw'}
     }
     print('Initializing locally built instance:')
-    pipeline.buildImage(dirPath,localTag)
-    pipeline.runI(image=localTag, name='dispatch-local',
+    pipeline.build_image(dirPath,localTag)
+    pipeline.runi(image=localTag, name='dispatch-local',
                   working_dir='/tmp', volumes=volumes, command='/bin/sh')
 
 def main():

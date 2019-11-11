@@ -10,7 +10,8 @@ RUN curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-re
 chmod +x /usr/local/bin/kubectl
 
 #install Helm
-RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d '/' -f 8 | sed 's/">redirected<//') && \
+# RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d '/' -f 8 | sed 's/">redirected<//') && \
+RUN HELM_VERSION='dev-v3' && \
     mkdir /opt/helm && \
     curl https://kubernetes-helm.storage.googleapis.com/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz --directory /opt/helm && \
     ln -s /opt/helm/linux-amd64/helm /usr/local/bin/helm

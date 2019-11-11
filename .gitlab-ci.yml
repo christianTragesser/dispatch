@@ -16,7 +16,8 @@ stages:
 test:
   stage: test
   script:
-    - $CI_PROJECT_DIR/ci.py test
+    - docker version
+    - python3 $CI_PROJECT_DIR/ci.py test
     - docker tag local/${SERVICE}:latest $EXT_NAME:latest
     - docker tag $EXT_NAME:latest $EXT_NAME:$CI_COMMIT_SHA
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
