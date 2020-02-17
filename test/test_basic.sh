@@ -2,6 +2,7 @@
 
 set -e
 
-which kops
-which kubectl
-which aws
+type kops
+type kubectl
+type aws
+type helm
