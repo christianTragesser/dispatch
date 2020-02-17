@@ -2,21 +2,22 @@ image: registry.gitlab.com/christiantragesser/pypline-ci:3
 
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
   SERVICE: dispatch
   EXT_NAME: $CI_REGISTRY/christiantragesser/$SERVICE
 
 services:
-  - name: docker:stable-dind
+  - name: docker:19.03.1-dind
 
 stages:
   - test
 
 test:
   stage: test
+  tags:
+    - docker
   script:
-    - docker version
     - python3 $CI_PROJECT_DIR/ci.py test
     - docker tag local/${SERVICE}:latest $EXT_NAME:latest
     - docker tag $EXT_NAME:latest $EXT_NAME:$CI_COMMIT_SHA
