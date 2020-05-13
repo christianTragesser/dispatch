@@ -3,7 +3,7 @@ import sys
 from subprocess import call
 from botocore.exceptions import EndpointConnectionError
 
-k8s_version = '1.16.10'
+k8s_version = '1.16.9'
 
 
 def getCreds(session):
