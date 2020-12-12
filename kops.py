@@ -135,11 +135,7 @@ def createCluster(session, name, bucket, azs, node_size, node_count):
                     '--state=s3://'+bucket,
                     '--ssh-public-key=~/.ssh/kops_rsa.pub',
                     '--authorization=RBAC',
-                    '--yes',
-                    '--bastion']
-    # if using gossip protocol domain, do not provision a bastion host
-    if '.k8s.local' in name:
-        del kops_command[-1]
+                    '--yes']
     call(kops_command)
 
 
