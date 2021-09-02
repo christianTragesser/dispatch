@@ -16,8 +16,8 @@ RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d
     ln -s /opt/helm/linux-amd64/helm /usr/local/bin/helm
 
 #install aws utilities
-RUN pip install --no-cache-dir awscli boto3 && mkdir -p /opt/dispatch
+RUN pip install --no-cache-dir awscli boto3 requests && mkdir -p /opt/dispatch
 
-ADD *.py /opt/dispatch/
+ADD src/*.py /opt/dispatch/
 
 CMD ["python", "/opt/dispatch/main.py"]
