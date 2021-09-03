@@ -1,87 +1,16 @@
 #!/usr/bin/python
+# pylint: disable=R1732
 '''
 dispatch utils
 '''
 import os
 import sys
+from subprocess import Popen
 import boto3
 import botocore
-
-MANAGED_POLICIES = ['AmazonEC2FullAccess', 'AmazonRoute53FullAccess', 'AmazonS3FullAccess',
-                    'IAMFullAccess', 'AmazonVPCFullAccess']
-ARN_PREFIX = 'arn:aws:iam::aws:policy/'
+from kops import KopsException
 
 
-#def get_users(session):
-#    '''
-#
-#    '''
-#    iam = session.client('iam')
-#
-#    users = []
-#    paginator = iam.get_paginator('list_users')
-#    for response in paginator.paginate():
-#        for user_name in response['Users']:
-#            users.append(user_name['UserName'])
-#    return users
-#
-#
-#def get_groups(session):
-#    iam = session.client('iam')
-#
-#    groups = []
-#    paginator = iam.get_paginator('list_groups')
-#    for response in paginator.paginate():
-#        for group_name in response['Groups']:
-#            groups.append(group_name['GroupName'])
-#    return groups
-#
-#
-#def get_user_groups(session, user):
-#    iam = session.client('iam')
-#
-#    user_groups = []
-#    response = iam.list_groups_for_user(UserName=user)
-#    for group in response['Groups']:
-#        user_groups.append(group['GroupName'])
-#    return user_groups
-#
-#
-#def get_attached_policies(session, group):
-#    iam = session.client('iam')
-#
-#    policies = []
-#    response = iam.list_attached_group_policies(GroupName=group)
-#    for policy in response['AttachedPolicies']:
-#        policies.append(policy['PolicyName'])
-#    return policies
-#
-#
-#
-#
-#def assign_policies(session, group):
-#    iam = session.client('iam')
-#    flag = False
-#    policies = get_attached_policies(session, group)
-#    for policy in MANAGED_POLICIES:
-#        if policy not in policies:
-#            flag = True
-#            break
-#    if flag:
-#        for policy in MANAGED_POLICIES:
-#            arn = ARN_PREFIX + policy
-#            iam.attach_group_policy(GroupName=group, PolicyArn=arn)
-#
-#
-#
-#
-#def verify_creation(item):
-#    print('\n + Dispatch recommends creating an IAM {} specific\n'
-#          '   to KOPS administration to ensure principal of least privilege.\n'.format(str(item)))
-#    create_item = input(' Create Dispatch KOPS admin {}?([y]/n) '.format(str(item))) or 'y'
-#    return bool(create_item in ('y', 'Y', 'yes', 'Yes'))
-#
-#
 def set_creds(access_key_id, secret_access_key, session_token):
     '''
     Set AWS session credentials
@@ -109,44 +38,88 @@ def get_s3_buckets(session):
 
 def exercise_creds(session):
     '''
-    Use AWS session credentials to ensure dispatch
-    has proper access to IAM and S3
+    Simple use of AWS credentials to validate AWS
+    credentials provided to dispatch are valid
     '''
-    print('\n    Testing provided credentials...')
     iam_client = session.client('iam')
     s3_client = session.client('s3')
+
     try:
         iam_client.list_users()
-        iam_client.list_groups()
         s3_client.list_buckets()
-        print('    ...credentials successfully authenticated.\n')
+        print(' . Valid AWS credentials')
     except botocore.exceptions.ClientError as creds_error:
-        print("\n - There is an issue with the provided Access Key credentials:\n")
+        print(" ! There is an issue with the provided AWS credentials:")
         print(creds_error)
         sys.exit(1)
 
 
-def must_mount(access_key, user):
+def must_mount():
     '''
-    Mounts /root directory of dispatch instance
-    to dispatch user home directory
+    Mounts $HOME of docker host to /root directory of dispatch instance
     '''
-    if os.path.isdir("/root/.kube") or os.path.isdir("/root/.ssh"):
-        print(' . Found container mount for /root.')
+    if os.path.isdir(f"{os.environ['HOME']}/.ssh"):
+        print(' . Found local $HOME mount')
     else:
-        mount_message = f'''
-        You must mount /root to your home directory.
-        Use the docker command below to properly operate KOPS:
+        mount_message = '''
+        It is suggested your $HOME directory path be mounted to /root.
+        Use the docker command below to preserve cluster configuration:
 
-        docker run --rm -it \\
-        -e AWS_ACCESS_KEY_ID="{access_key}" \\
-        -e USER="{user}" \\
-        -v $HOME:/root \\
+        docker run --rm -it -v $HOME:/root \\
         registry.gitlab.com/christiantragesser/dispatch
         '''
         print(mount_message)
         sys.exit(1)
 
+
+def dispatch_ssh_keys(ssh_key_dir):
+    '''
+    ensure RSA keys exists for EC2 instances
+    '''
+    ssh_key = ssh_key_dir+'/kops_rsa'
+
+    if not os.path.isfile(ssh_key):
+        print(' * KOPS RSA key not found, generating...')
+        print(f' + Creating RSA key {ssh_key}')
+        process = Popen(['ssh-keygen', '-t', 'rsa',
+              '-b', '4096',
+              '-q',
+              '-N', '',
+              '-f', ssh_key
+              ])
+        process.wait()
+
+        if process.returncode != 0:
+            raise KopsException('There was an issue creating SSH keys.\n')
+
+
+def create_dir(dir_path):
+    '''
+    ensure directory for dispatch
+    '''
+    if not os.path.isdir(dir_path):
+        os.mkdir(dir_path, mode = 0o777, dir_fd = None)
+
+
+def dispatch_workspace():
+    '''
+    prepares dispatch user working directory
+    '''
+    dispatch_dir = os.environ['HOME']+'/.dispatch'
+    ssh_key_dir = f'{dispatch_dir}/.ssh'
+    kube_dir = f'{dispatch_dir}/.kube'
+    kube_config = f'{kube_dir}/config'
+
+    create_dir(dispatch_dir)
+    create_dir(ssh_key_dir)
+    dispatch_ssh_keys(ssh_key_dir)
+    create_dir(kube_dir)
+
+    if not os.path.isfile(kube_config):
+        with open(kube_config, 'w', encoding="utf8"):
+            os.utime(kube_config, None)
+
+        os.chmod(kube_config, 0o664)
 
 def kops_deps(session, name):
     '''
@@ -160,28 +133,34 @@ def kops_deps(session, name):
     user_details = {}
     user_details['bucket'] = kops_bucket
 
-    # Create KOPS S3 bucket
     buckets = get_s3_buckets(session)
     if kops_bucket in buckets:
-        print(' . Using s3://{0:s} for KOPS state.'.format(kops_bucket))
+        print(f' . Using s3://{kops_bucket} for KOPS state.')
     else:
-        print(' + Creating KOPS state S3 bucket: {0:s}'.format(kops_bucket))
-        s3_client.create_bucket(ACL='private', Bucket=kops_bucket, )
-        s3_client.put_bucket_encryption(
-            Bucket=kops_bucket,
-            ServerSideEncryptionConfiguration={
-                'Rules': [
-                    {
-                        'ApplyServerSideEncryptionByDefault': {
-                            'SSEAlgorithm': 'AES256',
-                        }
-                    },
-                ]
-            }
-        )
-        s3_client.put_bucket_versioning(
-            Bucket=kops_bucket,
-            VersioningConfiguration={'Status': 'Enabled'}
-        )
+        print(f' ! S3 bucket {kops_bucket} for KOPS state does not exist.')
+        create_bucket = input(f' ? Create {kops_bucket} bucket(y/n): ') or 'n'
+
+        if create_bucket in ('y', 'Y'):
+            print(f' + Creating KOPS state S3 bucket: {kops_bucket}')
+            s3_client.create_bucket(ACL='private', Bucket=kops_bucket, )
+            s3_client.put_bucket_encryption(
+                Bucket=kops_bucket,
+                ServerSideEncryptionConfiguration={
+                    'Rules': [
+                        {
+                            'ApplyServerSideEncryptionByDefault': {
+                                'SSEAlgorithm': 'AES256',
+                            }
+                        },
+                    ]
+                }
+            )
+            s3_client.put_bucket_versioning(
+                Bucket=kops_bucket,
+                VersioningConfiguration={'Status': 'Enabled'}
+            )
+        else:
+            print('\nS3 bucket is required for cluster provisioning, exiting.\n')
+            sys.exit(0)
 
     return user_details

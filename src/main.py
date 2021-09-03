@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# pylint: disable=C0301
+# pylint: disable=W1401
 '''
 dispatch main
 '''
@@ -9,7 +11,6 @@ import utils
 import kops
 
 access_key_id = os.environ['AWS_ACCESS_KEY_ID'] if 'AWS_ACCESS_KEY_ID' in os.environ else None
-# pylint: disable=C0301
 secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY'] if 'AWS_SECRET_ACCESS_KEY' in os.environ else None
 session_token = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.environ else None
 user_name = os.environ['USER'] if 'USER' in os.environ else None
@@ -17,7 +18,7 @@ user_name = os.environ['USER'] if 'USER' in os.environ else None
 WELCOME = '''
 *********************************************************************
 Thank you for using Dispatch. In the interest of security, only
-temporary AWS credentials can be used to provision clusters.  See the
+temporary AWS credentials can be used to provision clusters.  See AWS
 AWS documentation for creating temporary credentials for account IAM
 users.
 https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html
@@ -30,13 +31,12 @@ docker run --rm -it \\
     -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \\
     -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \\
     -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \\
-    -v $HOME/.dispatch:/root \\
+    -v $HOME:/root \\
     registry.gitlab.com/christiantragesser/dispatch
 
 *********************************************************************
 '''
 
-# pylint: disable=W1401
 ASCII_ART='''
  ______  _____ _______  _____  _______ _______ _______ _     _
  |     \   |   |______ |_____] |_____|    |    |       |_____|
@@ -53,22 +53,26 @@ try:
         print('***: KOPS credentials :***')
         access_key_id = input('Please enter your AWS Access Key ID: ')
 
-    if secret_access_key is None or secret_access_key == '':
+    if secret_access_key is None:
         secret_access_key = getpass('Please enter AWS Secret Access Key(masked input): ')
 
-    if session_token is None or session_token == '':
+    if session_token is None:
         session_token = getpass('Please enter Session Token(masked input): ')
 
     kops_creds = utils.set_creds(access_key_id, secret_access_key, session_token)
 
-    utils.exercise_creds(kops_creds)
 
     if user_name is None:
         user_name = input('Please enter your username: ')
 
-    print('\n KOPS dependency checks:')
-    utils.must_mount(access_key_id, user_name)
+    print('\n Dispatch dependency checks:')
+    utils.must_mount()
+
+    utils.exercise_creds(kops_creds)
+
     user_detail = utils.kops_deps(kops_creds, user_name)
+
+    utils.dispatch_workspace()
 
     kops.list_kops_clusters(kops_creds, user_detail['bucket'])
 

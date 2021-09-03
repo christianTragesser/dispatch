@@ -34,12 +34,13 @@ def get_creds(session):
 
 def set_env_vars(credentials, bucket):
     '''
-    assign AWS creds as env vars
+    assign dispatch session env vars
     '''
     os.environ['AWS_ACCESS_KEY_ID'] = credentials.access_key
     os.environ['AWS_SECRET_ACCESS_KEY'] = credentials.secret_key
     os.environ['AWS_SESSION_TOKEN'] = credentials.token
     os.environ['KOPS_STATE_STORE'] = 's3://'+bucket
+    os.environ['KUBECONFIG'] = '/root/.dispatch/.kube/config'
 
 
 def give_me_shell(session, bucket):
@@ -49,29 +50,6 @@ def give_me_shell(session, bucket):
     creds = get_creds(session)
     set_env_vars(creds, bucket)
     os.system('/bin/sh')
-
-
-def kops_ssh_key():
-    '''
-    checks for SSH key,
-    creates SSH key if not present
-    '''
-    ssh_key_dir = os.environ['HOME']+'/.ssh'
-    ssh_key = ssh_key_dir+'/kops_rsa'
-
-    if not os.path.isfile(ssh_key):
-        print('\n* KOPS RSA key not found, generating...')
-        print(f' + Creating RSA key {ssh_key}')
-        process = Popen(['ssh-keygen', '-t', 'rsa',
-              '-b', '2048',
-              '-q',
-              '-N', '',
-              '-f', ssh_key
-              ])
-        process.wait()
-
-        if process.returncode != 0:
-            raise KopsException('There was an issue creating SSH keys.\n')
 
 
 def describe_azs(session, region):
@@ -148,7 +126,7 @@ def create_cluster(session, name, bucket, azs, node_size, node_count):
                     '--cloud-labels='+labels,
                     '--name='+name,
                     '--state=s3://'+bucket,
-                    '--ssh-public-key=~/.ssh/kops_rsa.pub',
+                    '--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub',
                     '--authorization=RBAC',
                     '--yes']
 
@@ -161,7 +139,6 @@ def create_cluster(session, name, bucket, azs, node_size, node_count):
 
     if process.returncode != 0:
         raise KopsException(f'Provisioning of KOPS cluster {name} failed.\n')
-
 
 
 def create_option(session, bucket):
@@ -180,7 +157,8 @@ def create_option(session, bucket):
     node_count = get_node_count()
 
     print(f'''
-    New cluster details:
+    New cluster details
+    -------------------
       Kubernetes version: {k8s_version}
       Cluster name: {cluster_name}
       Cluster size: {node_size['label']}
@@ -190,7 +168,6 @@ def create_option(session, bucket):
     verification = input(' Create this cluster?(y/n): ') or 'n'
     if verification in ('y', 'Y'):
         try:
-            kops_ssh_key()
             create_cluster(session, cluster_name, bucket, azs, node_size, node_count)
         except KopsException as kops_err:
             print(kops_err)
@@ -198,7 +175,6 @@ def create_option(session, bucket):
     else:
         print('exiting.')
         sys.exit(0)
-
 
 
 def list_kops_clusters(session, bucket):
