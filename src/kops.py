@@ -140,6 +140,11 @@ def create_cluster(session, name, bucket, azs, node_size, node_count):
     if process.returncode != 0:
         raise KopsException(f'Provisioning of KOPS cluster {name} failed.\n')
 
+    print(f'''
+    Configure kubectl management of cluster {name} with command:
+        export KUBECONFIG="$HOME/.dispatch/.kube/config"\n
+    ''')
+
 
 def create_option(session, bucket):
     '''
