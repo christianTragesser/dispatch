@@ -119,7 +119,7 @@ def dispatch_workspace():
         with open(kube_config, 'w', encoding="utf8"):
             os.utime(kube_config, None)
 
-        os.chmod(kube_config, 0o664)
+        os.chmod(kube_config, 0o600)
 
 def kops_deps(session, name):
     '''
