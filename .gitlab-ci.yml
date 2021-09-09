@@ -41,4 +41,3 @@ publish:
       changes:
         - src/*
         - Dockerfile
-      when: always

@@ -9,7 +9,7 @@ FROM python as lint
 RUN pip install pylint && \
     cd /opt && \
     pylint ./dispatch && \
-    exit 1
+    exit 127
 
 FROM python as publish
 #install KOPS
