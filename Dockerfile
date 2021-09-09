@@ -7,7 +7,8 @@ ADD src/*.py /opt/dispatch/
 
 FROM python as lint
 RUN pip install pylint && \
-    pylint /opt/dispatch
+    cd /opt && \
+    pylint ./dispatch
 
 FROM python as publish
 #install KOPS
