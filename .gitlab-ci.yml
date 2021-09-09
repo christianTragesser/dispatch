@@ -1,26 +1,44 @@
-image: registry.gitlab.com/christiantragesser/pypline-ci:3
-
 variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
-  SERVICE: dispatch
-  EXT_NAME: $CI_REGISTRY/christiantragesser/$SERVICE
+  IMAGE_NAME: dispatch
+  IMAGE_FILE_PATH: $CI_PROJECT_DIR
 
-services:
-  - name: docker:19.03.1-dind
+include:
+  - project: christiantragesser/gitlab-ci-templates
+    ref: master
+    file:
+      - kaniko.yml
 
 stages:
   - test
+  - publish
 
 test:
   stage: test
   tags:
     - docker
-  script:
-    - python3 $CI_PROJECT_DIR/ci.py test
-    - docker tag local/${SERVICE}:latest $EXT_NAME:latest
-    - docker tag $EXT_NAME:latest $EXT_NAME:$CI_COMMIT_SHA
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $EXT_NAME:latest | grep -e "The push refers to" -e latest
-    - docker push $EXT_NAME:$CI_COMMIT_SHA | grep -e "The push refers to" -e latest
+  extends:
+    - .kaniko
+  variables:
+    DOCKER_BUILD_STAGE: lint
+    KANIKO_ADDITIONAL_ARGS: --no-push
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - src/*
+        - Dockerfile
+      when: always
+
+publish:
+  stage: publish
+  tags:
+    - docker
+  extends:
+    - .kaniko
+  variables:
+    DOCKER_BUILD_STAGE: publish
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - src/*
+        - Dockerfile
+      when: always

@@ -1,5 +1,15 @@
-FROM python:3-alpine
+FROM python:3-alpine as base
 
+FROM base as python
+RUN pip install --no-cache-dir awscli boto3 requests && \
+    mkdir -p /opt/dispatch
+ADD src/*.py /opt/dispatch/
+
+FROM python as lint
+RUN pip install pylint && \
+    pylint /opt/dispatch
+
+FROM python as publish
 #install KOPS
 RUN apk add --no-cache curl openssh-keygen && \
 curl -Lo /usr/local/bin/kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && \
@@ -14,10 +24,5 @@ RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d
     mkdir /opt/helm && \
     curl https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz --directory /opt/helm && \
     ln -s /opt/helm/linux-amd64/helm /usr/local/bin/helm
-
-#install aws utilities
-RUN pip install --no-cache-dir awscli boto3 requests && mkdir -p /opt/dispatch
-
-ADD src/*.py /opt/dispatch/
 
 CMD ["python", "/opt/dispatch/main.py"]
