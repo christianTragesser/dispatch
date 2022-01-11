@@ -192,7 +192,8 @@ def list_kops_clusters(session, bucket):
     if 'CommonPrefixes' in response:
         print('\n Existing KOPS clusters:')
         for cluster in response['CommonPrefixes']:
-            print('  - {0:s}'.format(cluster['Prefix'].replace('/', '')))
+            cluster_fqdn = cluster['Prefix'].replace('/', '')
+            print(f'  - {cluster_fqdn}')
     else:
         print('\n Cluster list is empty.')
 
