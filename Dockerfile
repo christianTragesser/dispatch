@@ -12,13 +12,16 @@ RUN pip install pylint && \
 
 FROM python as publish
 #install KOPS
-RUN apk add --no-cache curl openssh-keygen && \
-curl -Lo /usr/local/bin/kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && \
-chmod +x /usr/local/bin/kops
+#RUN KOPS_VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4) && \
+RUN KOPS_VERSION="1.21.4" && \
+    apk add --no-cache curl openssh-keygen && \
+    curl -Lo /usr/local/bin/kops https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
+    chmod +x /usr/local/bin/kops
 
 #install kubectl
-RUN curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
-chmod +x /usr/local/bin/kubectl
+RUN KUBE_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) && \
+    curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl && \
+    chmod +x /usr/local/bin/kubectl
 
 #install Helm
 RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d '/' -f 8 | sed 's/">redirected<//') && \
