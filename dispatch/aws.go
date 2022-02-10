@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -162,8 +163,8 @@ func ListClusters(bucket string) {
 	s3Client := s3.NewFromConfig(*clientConfig)
 
 	listConfig := &s3.ListObjectsV2Input{
-		Bucket: &bucket,
-		//Delimiter: aws.String("/"),
+		Bucket:    &bucket,
+		Delimiter: aws.String("/"),
 	}
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
@@ -171,10 +172,10 @@ func ListClusters(bucket string) {
 		ReportErr(err, "list bucket objects")
 	}
 
-	if len(objects.Contents) > 0 {
+	if len(objects.CommonPrefixes) > 0 {
 		fmt.Print("\n Existing KOPS clusters:\n")
-		for _, item := range objects.Contents {
-			fmt.Printf("\t - %s \n", *item.Key)
+		for _, item := range objects.CommonPrefixes {
+			fmt.Printf("\t - %s \n", strings.Trim(*item.Prefix, "/"))
 		}
 	} else {
 		fmt.Print("\n No previous clusters found\n")
