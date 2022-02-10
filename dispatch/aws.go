@@ -117,7 +117,7 @@ func testAWSCreds(clientConfig aws.Config) {
 	fmt.Print(" . Valid AWS credentials have been provided\n")
 }
 
-func ensureS3Bucket(clientConfig aws.Config, user string) {
+func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	var bucketExists bool
 	kopsBucket := user + "-dispatch-kops-state-store"
 
@@ -145,10 +145,38 @@ func ensureS3Bucket(clientConfig aws.Config, user string) {
 			os.Exit(0)
 		}
 	}
+
+	return kopsBucket
 }
 
-func EnsureDependencies(userID string) {
+func EnsureDependencies(userID string) string {
 	clientConfig := awsClientConfig()
 	testAWSCreds(*clientConfig)
-	ensureS3Bucket(*clientConfig, userID)
+
+	return ensureS3Bucket(*clientConfig, userID)
+}
+
+func ListClusters(bucket string) {
+	clientConfig := awsClientConfig()
+
+	s3Client := s3.NewFromConfig(*clientConfig)
+
+	listConfig := &s3.ListObjectsV2Input{
+		Bucket: &bucket,
+		//Delimiter: aws.String("/"),
+	}
+
+	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
+	if err != nil {
+		ReportErr(err, "list bucket objects")
+	}
+
+	if len(objects.Contents) > 0 {
+		fmt.Print("\n Existing KOPS clusters:\n")
+		for _, item := range objects.Contents {
+			fmt.Printf("\t - %s \n", *item.Key)
+		}
+	} else {
+		fmt.Print("\n No previous clusters found\n")
+	}
 }

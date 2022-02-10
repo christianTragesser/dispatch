@@ -13,13 +13,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func reportErr(err error, activity string) {
-	fmt.Printf(" ! Failed to %s\n\n", activity)
-	fmt.Print(err)
-	fmt.Print("\n")
-	os.Exit(1)
-}
-
 func ensureDirs(paths [3]string) {
 	for _, path := range paths {
 		err := os.Mkdir(path, os.ModePerm)
@@ -39,7 +32,7 @@ func ensureRSAKeys(sshDir string) {
 		fmt.Printf(" + Creating RSA key %s\n", keyFile)
 		key, err := rsa.GenerateKey(rand.Reader, bitSize)
 		if err != nil {
-			reportErr(err, "create RSA key")
+			ReportErr(err, "create RSA key")
 		}
 
 		pub := key.Public()
@@ -59,11 +52,11 @@ func ensureRSAKeys(sshDir string) {
 		)
 
 		if err := ioutil.WriteFile(keyFile, keyPEM, 0600); err != nil {
-			reportErr(err, "save private key")
+			ReportErr(err, "save private key")
 		}
 
 		if err := ioutil.WriteFile(keyFile+".pub", pubPEM, 0644); err != nil {
-			reportErr(err, "save public key")
+			ReportErr(err, "save public key")
 		}
 	} else {
 		fmt.Printf(" . Found %s RSA private key\n", keyFile)
@@ -78,7 +71,7 @@ func ensureKubeConfig(kubeDir string) {
 	if os.IsNotExist(err) {
 		config, err := os.Create(configFile)
 		if err != nil {
-			reportErr(err, "create kube config file")
+			ReportErr(err, "create kube config file")
 		}
 		config.Close()
 
@@ -101,23 +94,23 @@ func ensureDispatchConfig(homeDir string) string {
 
 		configData, err := yaml.Marshal(configMap)
 		if err != nil {
-			reportErr(err, "set UID")
+			ReportErr(err, "set UID")
 		}
 
 		writeErr := ioutil.WriteFile(configFile, configData, 0644)
 		if writeErr != nil {
-			reportErr(writeErr, "write Dispatch config file")
+			ReportErr(writeErr, "write Dispatch config file")
 		}
 	} else {
 		configData, readErr := ioutil.ReadFile(configFile)
 		if readErr != nil {
-			reportErr(readErr, "read Dispatch config file")
+			ReportErr(readErr, "read Dispatch config file")
 		}
 
 		configMap := make(map[string]string)
 		yamlErr := yaml.Unmarshal(configData, &configMap)
 		if yamlErr != nil {
-			reportErr(readErr, "set UID from config file")
+			ReportErr(readErr, "set UID from config file")
 		}
 
 		dispatchUID = configMap["uid"]

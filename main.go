@@ -14,5 +14,6 @@ var ASCII_ART string = `______  _____ _______  _____  _______ _______ _______ _ 
 func main() {
 	fmt.Print(ASCII_ART)
 	userID := dispatch.EnsureWorkspace()
-	dispatch.EnsureDependencies(userID)
+	bucket := dispatch.EnsureDependencies(userID)
+	dispatch.ListClusters(bucket)
 }
