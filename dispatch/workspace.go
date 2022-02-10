@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 
+	"golang.org/x/crypto/ssh"
 	"sigs.k8s.io/yaml"
 )
 
@@ -29,13 +30,18 @@ func ensureRSAKeys(sshDir string) {
 	_, err := os.Stat(keyFile)
 
 	if os.IsNotExist(err) {
-		fmt.Printf(" + Creating RSA key %s\n", keyFile)
+		fmt.Printf(" + Creating RSA key %s for KOPS\n", keyFile)
+
+		// Create private RSA key in PEM format
 		key, err := rsa.GenerateKey(rand.Reader, bitSize)
 		if err != nil {
 			ReportErr(err, "create RSA key")
 		}
 
-		pub := key.Public()
+		err = key.Validate()
+		if err != nil {
+			ReportErr(err, "validate private key")
+		}
 
 		keyPEM := pem.EncodeToMemory(
 			&pem.Block{
@@ -44,18 +50,20 @@ func ensureRSAKeys(sshDir string) {
 			},
 		)
 
-		pubPEM := pem.EncodeToMemory(
-			&pem.Block{
-				Type:  "RSA PUBLIC KEY",
-				Bytes: x509.MarshalPKCS1PublicKey(pub.(*rsa.PublicKey)),
-			},
-		)
+		// Create ssh-rsa public key
+		pubRSAKey, err := ssh.NewPublicKey(&key.PublicKey)
+		if err != nil {
+			ReportErr(err, "create public RSA key")
+		}
 
+		pubKeyBytes := ssh.MarshalAuthorizedKey(pubRSAKey)
+
+		// Write RSA key pair to disk
 		if err := ioutil.WriteFile(keyFile, keyPEM, 0600); err != nil {
 			ReportErr(err, "save private key")
 		}
 
-		if err := ioutil.WriteFile(keyFile+".pub", pubPEM, 0644); err != nil {
+		if err := ioutil.WriteFile(keyFile+".pub", pubKeyBytes, 0644); err != nil {
 			ReportErr(err, "save public key")
 		}
 	} else {
