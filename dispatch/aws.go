@@ -21,8 +21,7 @@ func awsClientConfig() *aws.Config {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		fmt.Print(" ! There is an issue with the provided IAM credentials.")
-		panic(err)
+		ReportErr(err, "load AWS configuration")
 	}
 
 	return &cfg
@@ -35,10 +34,7 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
-		fmt.Print(" ! Failed to list IAM users\n\n")
-		fmt.Print(err)
-		fmt.Print("\n")
-		os.Exit(1)
+		ReportErr(err, "list IAM users")
 	}
 }
 
@@ -47,10 +43,7 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 
 	buckets, err := s3Client.ListBuckets(context.TODO(), nil)
 	if err != nil {
-		fmt.Print(" ! Failed to list S3 buckets\n\n")
-		fmt.Print(err)
-		fmt.Print("\n")
-		os.Exit(1)
+		ReportErr(err, "list S3 buckets")
 	}
 
 	return buckets
@@ -72,10 +65,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 
 	_, err := s3Client.CreateBucket(context.TODO(), createSettings)
 	if err != nil {
-		fmt.Print(" ! Failed to create KOPS S3 bucket\n\n")
-		fmt.Print(err)
-		fmt.Print("\n")
-		os.Exit(1)
+		ReportErr(err, "create KOPS S3 bucket")
 	}
 
 	// Set bucket encryption
@@ -90,10 +80,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 
 	_, err = s3Client.PutBucketEncryption(context.TODO(), encryptionSettings)
 	if err != nil {
-		fmt.Print(" ! Failed to encrypt KOPS S3 bucket\n\n")
-		fmt.Print(err)
-		fmt.Print("\n")
-		os.Exit(1)
+		ReportErr(err, "encrypt KOPS S3 bucket")
 	}
 
 	// Enable bucket versioning
@@ -105,15 +92,18 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 
 	_, err = s3Client.PutBucketVersioning(context.TODO(), versionSettings)
 	if err != nil {
-		fmt.Print(" ! Failed to version KOPS S3 bucket\n\n")
-		fmt.Print(err)
-		fmt.Print("\n")
-		os.Exit(1)
+		ReportErr(err, "version KOPS S3 bucket")
 	}
 }
 
 func testAWSCreds(clientConfig aws.Config) {
-	fmt.Print("Ensuring AWS dependencies:\n")
+	fmt.Print("\nEnsuring AWS dependencies:\n")
+
+	_, accessKeySet := os.LookupEnv("AWS_ACCESS_KEY_ID")
+	if !accessKeySet {
+		fmt.Print("(No AWS env var creds, not sure this will end well....)\n")
+	}
+
 	testIAM(clientConfig)
 	fmt.Print(" . Valid AWS credentials have been provided\n")
 }
@@ -178,6 +168,6 @@ func ListClusters(bucket string) {
 			fmt.Printf("\t - %s \n", strings.Trim(*item.Prefix, "/"))
 		}
 	} else {
-		fmt.Print("\n No previous clusters found\n")
+		fmt.Print("\n No existing clusters found\n")
 	}
 }
