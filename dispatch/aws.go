@@ -8,9 +8,12 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 func awsClientConfig() *aws.Config {
@@ -21,7 +24,7 @@ func awsClientConfig() *aws.Config {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		ReportErr(err, "load AWS configuration")
+		reportErr(err, "load AWS configuration")
 	}
 
 	return &cfg
@@ -34,7 +37,7 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
-		ReportErr(err, "list IAM users")
+		reportErr(err, "list IAM users")
 	}
 }
 
@@ -43,10 +46,37 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 
 	buckets, err := s3Client.ListBuckets(context.TODO(), nil)
 	if err != nil {
-		ReportErr(err, "list S3 buckets")
+		reportErr(err, "list S3 buckets")
 	}
 
 	return buckets
+}
+
+func getZones() string {
+	var azs string
+
+	clientConfig := awsClientConfig()
+	ec2Client := ec2.NewFromConfig(*clientConfig)
+
+	regionValue := []string{clientConfig.Region}
+	location := &ec2types.Filter{Name: aws.String("region-name"), Values: regionValue}
+	settingFilter := []ec2types.Filter{*location}
+	describeSettings := &ec2.DescribeAvailabilityZonesInput{Filters: settingFilter}
+
+	resp, err := ec2Client.DescribeAvailabilityZones(context.TODO(), describeSettings)
+	if err != nil {
+		reportErr(err, "describe "+clientConfig.Region+" availability zones")
+	}
+
+	for i := range resp.AvailabilityZones {
+		if i == 0 {
+			azs = azs + *resp.AvailabilityZones[i].ZoneName
+		} else {
+			azs = azs + "," + *resp.AvailabilityZones[i].ZoneName
+		}
+	}
+
+	return azs
 }
 
 func createKOPSBucket(clientConfig aws.Config, bucketName string) {
@@ -59,20 +89,20 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	}
 
 	if clientConfig.Region != "us-east-1" {
-		locationConfig := &types.CreateBucketConfiguration{LocationConstraint: types.BucketLocationConstraint(clientConfig.Region)}
+		locationConfig := &s3types.CreateBucketConfiguration{LocationConstraint: types.BucketLocationConstraint(clientConfig.Region)}
 		createSettings.CreateBucketConfiguration = locationConfig
 	}
 
 	_, err := s3Client.CreateBucket(context.TODO(), createSettings)
 	if err != nil {
-		ReportErr(err, "create KOPS S3 bucket")
+		reportErr(err, "create KOPS S3 bucket")
 	}
 
 	// Set bucket encryption
-	defEnc := &types.ServerSideEncryptionByDefault{SSEAlgorithm: types.ServerSideEncryptionAes256}
-	rule := types.ServerSideEncryptionRule{ApplyServerSideEncryptionByDefault: defEnc}
-	rules := []types.ServerSideEncryptionRule{rule}
-	serverConfig := &types.ServerSideEncryptionConfiguration{Rules: rules}
+	defEnc := &s3types.ServerSideEncryptionByDefault{SSEAlgorithm: types.ServerSideEncryptionAes256}
+	rule := s3types.ServerSideEncryptionRule{ApplyServerSideEncryptionByDefault: defEnc}
+	rules := []s3types.ServerSideEncryptionRule{rule}
+	serverConfig := &s3types.ServerSideEncryptionConfiguration{Rules: rules}
 	encryptionSettings := &s3.PutBucketEncryptionInput{
 		Bucket:                            &bucketName,
 		ServerSideEncryptionConfiguration: serverConfig,
@@ -80,11 +110,11 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 
 	_, err = s3Client.PutBucketEncryption(context.TODO(), encryptionSettings)
 	if err != nil {
-		ReportErr(err, "encrypt KOPS S3 bucket")
+		reportErr(err, "encrypt KOPS S3 bucket")
 	}
 
 	// Enable bucket versioning
-	versionConfig := &types.VersioningConfiguration{Status: types.BucketVersioningStatusEnabled}
+	versionConfig := &s3types.VersioningConfiguration{Status: s3types.BucketVersioningStatusEnabled}
 	versionSettings := &s3.PutBucketVersioningInput{
 		Bucket:                  &bucketName,
 		VersioningConfiguration: versionConfig,
@@ -92,16 +122,14 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 
 	_, err = s3Client.PutBucketVersioning(context.TODO(), versionSettings)
 	if err != nil {
-		ReportErr(err, "version KOPS S3 bucket")
+		reportErr(err, "version KOPS S3 bucket")
 	}
 }
 
 func testAWSCreds(clientConfig aws.Config) {
-	fmt.Print("\nEnsuring AWS dependencies:\n")
-
 	_, accessKeySet := os.LookupEnv("AWS_ACCESS_KEY_ID")
 	if !accessKeySet {
-		fmt.Print("(No AWS env var creds, not sure this will end well....)\n")
+		fmt.Print(" (AWS creds absent from env vars, not sure this will end well....)\n")
 	}
 
 	testIAM(clientConfig)
@@ -140,14 +168,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	return kopsBucket
 }
 
-func EnsureDependencies(userID string) string {
-	clientConfig := awsClientConfig()
-	testAWSCreds(*clientConfig)
-
-	return ensureS3Bucket(*clientConfig, userID)
-}
-
-func ListClusters(bucket string) {
+func listClusters(bucket string) {
 	clientConfig := awsClientConfig()
 
 	s3Client := s3.NewFromConfig(*clientConfig)
@@ -159,7 +180,7 @@ func ListClusters(bucket string) {
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
 	if err != nil {
-		ReportErr(err, "list bucket objects")
+		reportErr(err, "list bucket objects")
 	}
 
 	if len(objects.CommonPrefixes) > 0 {

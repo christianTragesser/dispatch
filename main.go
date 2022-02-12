@@ -2,18 +2,26 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	dispatch "github.com/christiantragesser/dispatch/dispatch"
 )
 
-var ASCII_ART string = `______  _____ _______  _____  _______ _______ _______ _     _
+var ASCII_ART string = "\n" + `______  _____ _______  _____  _______ _______ _______ _     _
 |     \   |   |______ |_____] |_____|    |    |       |_____|
 |_____/ __|__ ______| |       |     |    |    |______ |     |   
 ` + "\n\n"
 
 func main() {
+	var sessionEvent dispatch.KopsEvent
+
+	if len(os.Args) > 1 {
+		sessionEvent = dispatch.CLIOption()
+	}
+
 	fmt.Print(ASCII_ART)
-	userID := dispatch.EnsureWorkspace()
-	bucket := dispatch.EnsureDependencies(userID)
-	dispatch.ListClusters(bucket)
+
+	sessionEvent = dispatch.EnsureDependencies(sessionEvent)
+
+	dispatch.RunKOPS(sessionEvent)
 }

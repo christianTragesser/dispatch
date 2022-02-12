@@ -3,6 +3,7 @@ package dispatch
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"crypto/rand"
 	"crypto/rsa"
@@ -13,6 +14,15 @@ import (
 	"golang.org/x/crypto/ssh"
 	"sigs.k8s.io/yaml"
 )
+
+func ensureInstall(binName string) {
+	path, err := exec.LookPath(binName)
+	if err != nil {
+		reportErr(err, "find "+binName+" in system $PATH")
+	} else {
+		fmt.Printf(" . Found %s at %s\n", binName, path)
+	}
+}
 
 func ensureDirs(paths [3]string) {
 	for _, path := range paths {
@@ -35,12 +45,12 @@ func ensureRSAKeys(sshDir string) {
 		// Create private RSA key in PEM format
 		key, err := rsa.GenerateKey(rand.Reader, bitSize)
 		if err != nil {
-			ReportErr(err, "create RSA key")
+			reportErr(err, "create RSA key")
 		}
 
 		err = key.Validate()
 		if err != nil {
-			ReportErr(err, "validate private key")
+			reportErr(err, "validate private key")
 		}
 
 		keyPEM := pem.EncodeToMemory(
@@ -53,18 +63,18 @@ func ensureRSAKeys(sshDir string) {
 		// Create ssh-rsa public key
 		pubRSAKey, err := ssh.NewPublicKey(&key.PublicKey)
 		if err != nil {
-			ReportErr(err, "create public RSA key")
+			reportErr(err, "create public RSA key")
 		}
 
 		pubKeyBytes := ssh.MarshalAuthorizedKey(pubRSAKey)
 
 		// Write RSA key pair to disk
 		if err := ioutil.WriteFile(keyFile, keyPEM, 0600); err != nil {
-			ReportErr(err, "save private key")
+			reportErr(err, "save private key")
 		}
 
 		if err := ioutil.WriteFile(keyFile+".pub", pubKeyBytes, 0644); err != nil {
-			ReportErr(err, "save public key")
+			reportErr(err, "save public key")
 		}
 	} else {
 		fmt.Printf(" . Found %s RSA private key\n", keyFile)
@@ -79,7 +89,7 @@ func ensureKubeConfig(kubeDir string) {
 	if os.IsNotExist(err) {
 		config, err := os.Create(configFile)
 		if err != nil {
-			ReportErr(err, "create kube config file")
+			reportErr(err, "create kube config file")
 		}
 		config.Close()
 
@@ -95,43 +105,42 @@ func ensureDispatchConfig(homeDir string) string {
 	_, readErr := os.Stat(configFile)
 
 	if os.IsNotExist(readErr) {
-		fmt.Print("\n + Please enter a user ID: ")
+		fmt.Print(" + Please enter a user ID: ")
 		fmt.Scanf("%s", &dispatchUID)
 
 		configMap := map[string]string{"uid": dispatchUID}
 
 		configData, err := yaml.Marshal(configMap)
 		if err != nil {
-			ReportErr(err, "set UID")
+			reportErr(err, "set UID")
 		}
 
 		writeErr := ioutil.WriteFile(configFile, configData, 0644)
 		if writeErr != nil {
-			ReportErr(writeErr, "write Dispatch config file")
+			reportErr(writeErr, "write Dispatch config file")
 		}
 	} else {
 		configData, readErr := ioutil.ReadFile(configFile)
 		if readErr != nil {
-			ReportErr(readErr, "read Dispatch config file")
+			reportErr(readErr, "read Dispatch config file")
 		}
 
 		configMap := make(map[string]string)
 		yamlErr := yaml.Unmarshal(configData, &configMap)
 		if yamlErr != nil {
-			ReportErr(readErr, "set UID from config file")
+			reportErr(readErr, "set UID from config file")
 		}
 
 		dispatchUID = configMap["uid"]
 
-		fmt.Printf(" . Found Dispatch UID '%s'\n\n", configMap["uid"])
+		fmt.Printf(" . Found Dispatch UID '%s'\n", configMap["uid"])
 
 	}
 
 	return dispatchUID
 }
 
-func EnsureWorkspace() string {
-	fmt.Print("Ensuring workspace:\n")
+func ensureWorkspace() string {
 	var dispatchUID string
 	home, homeSet := os.LookupEnv("HOME")
 

@@ -1,0 +1,98 @@
+package dispatch
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+)
+
+const (
+	smallEC2  string = "t2.medium"
+	mediumEC2 string = "t2.xlarge"
+	largeEC2  string = "m4.2xlarge"
+)
+
+type KopsEvent struct {
+	action, bucket, count, name, size, user, version string
+	verified                                         bool
+}
+
+func getNodeSize(size string) string {
+	var ec2Instance string
+	switch size {
+	case "small":
+		ec2Instance = smallEC2
+	case "medium":
+		ec2Instance = mediumEC2
+	case "large":
+		ec2Instance = largeEC2
+	default:
+		fmt.Print(" ! Invalid EC2 instance size")
+		os.Exit(1)
+	}
+
+	return ec2Instance
+}
+
+func RunKOPS(event KopsEvent) {
+	var kopsCMD *exec.Cmd
+
+	listClusters(event.bucket)
+
+	switch event.action {
+	case "create":
+		zones := getZones()
+		nodeSize := getNodeSize(event.size)
+		labels := "owner=" + event.user + ", CreatedBy=Dispatch"
+
+		kopsCMD = exec.Command(
+			"kops", "create", "cluster",
+			"--kubernetes-version="+event.version,
+			"--state=s3://"+event.bucket,
+			"--node-count="+event.count,
+			"--node-size="+nodeSize,
+			"--cloud-labels="+labels,
+			"--name="+event.name,
+			"--zones="+zones,
+			"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
+			"--topology=private",
+			"--networking=weave",
+			"--authorization=RBAC",
+			"--yes",
+		)
+	case "delete":
+		kopsCMD = exec.Command(
+			"kops", "delete", "cluster",
+			"--name="+event.name,
+			"--state=s3://"+event.bucket,
+			"--yes",
+		)
+	default:
+		fmt.Print(" ! Unknown KOPS event\n")
+		os.Exit(1)
+	}
+
+	fmt.Print(event)
+
+	fmt.Printf("\nPerforming %s action for cluster %s:\n", event.action, event.name)
+	stdout, err := kopsCMD.StdoutPipe()
+	if err != nil {
+		reportErr(err, "display KOPS stdout")
+	}
+
+	if err := kopsCMD.Start(); err != nil {
+		reportErr(err, "start KOPS command")
+	}
+
+	data, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		reportErr(err, "read KOPS stdout")
+	}
+
+	if err := kopsCMD.Wait(); err != nil {
+		reportErr(err, "complete KOPS command")
+	}
+
+	fmt.Printf("%s\n", string(data))
+}
