@@ -133,7 +133,7 @@ func testAWSCreds(clientConfig aws.Config) {
 	}
 
 	testIAM(clientConfig)
-	fmt.Print(" . Valid AWS credentials have been provided\n")
+	fmt.Printf(" . Valid AWS credentials have been provided for region %s\n", clientConfig.Region)
 }
 
 func ensureS3Bucket(clientConfig aws.Config, user string) string {
@@ -180,15 +180,15 @@ func listClusters(bucket string) {
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
 	if err != nil {
-		reportErr(err, "list bucket objects")
+		reportErr(err, "list S3 items in KOPS state store")
 	}
 
 	if len(objects.CommonPrefixes) > 0 {
-		fmt.Print("\n Existing KOPS clusters:\n")
+		fmt.Print(" - Found existing KOPS clusters:\n")
 		for _, item := range objects.CommonPrefixes {
-			fmt.Printf("\t - %s \n", strings.Trim(*item.Prefix, "/"))
+			fmt.Printf("\t <> %s \n", strings.Trim(*item.Prefix, "/"))
 		}
 	} else {
-		fmt.Print("\n No existing clusters found\n")
+		fmt.Print(" . No existing clusters found\n")
 	}
 }
