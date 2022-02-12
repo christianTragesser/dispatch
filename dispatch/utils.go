@@ -14,8 +14,8 @@ func CLIOption() KopsEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createName := createCommand.String("name", "dispatch.k8s.local", "cluster name")
 	createSize := createCommand.String("size", "small", "cluster node size")
-	nodeCount := createCommand.String("count", "2", "cluster node count")
-	createVersion := createCommand.String("version", "1.21.4", "Kubernetes version")
+	nodeCount := createCommand.String("nodes", "2", "cluster node count")
+	createVersion := createCommand.String("version", "1.21.9", "Kubernetes version")
 
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteName := deleteCommand.String("name", "", "cluster name")
@@ -41,7 +41,7 @@ func CLIOption() KopsEvent {
 		}
 
 	case "-h":
-		fmt.Printf("Options:\n dispatch create -h\n dispatch delete -h\n")
+		fmt.Printf("Dispatch options:\n dispatch create -h\n dispatch delete -h\n")
 		os.Exit(0)
 
 	default:
@@ -65,6 +65,8 @@ func EnsureDependencies(kopsSession KopsEvent) KopsEvent {
 	testAWSCreds(*clientConfig)
 
 	kopsSession.bucket = ensureS3Bucket(*clientConfig, kopsSession.user)
+
+	listClusters(kopsSession.bucket)
 
 	return kopsSession
 }
