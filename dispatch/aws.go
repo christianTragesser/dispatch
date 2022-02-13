@@ -12,7 +12,6 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
@@ -89,7 +88,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	}
 
 	if clientConfig.Region != "us-east-1" {
-		locationConfig := &s3types.CreateBucketConfiguration{LocationConstraint: types.BucketLocationConstraint(clientConfig.Region)}
+		locationConfig := &s3types.CreateBucketConfiguration{LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region)}
 		createSettings.CreateBucketConfiguration = locationConfig
 	}
 
@@ -99,7 +98,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	}
 
 	// Set bucket encryption
-	defEnc := &s3types.ServerSideEncryptionByDefault{SSEAlgorithm: types.ServerSideEncryptionAes256}
+	defEnc := &s3types.ServerSideEncryptionByDefault{SSEAlgorithm: s3types.ServerSideEncryptionAes256}
 	rule := s3types.ServerSideEncryptionRule{ApplyServerSideEncryptionByDefault: defEnc}
 	rules := []s3types.ServerSideEncryptionRule{rule}
 	serverConfig := &s3types.ServerSideEncryptionConfiguration{Rules: rules}
