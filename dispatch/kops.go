@@ -15,7 +15,7 @@ const (
 
 type KopsEvent struct {
 	action, bucket, count, name, size, user, version string
-	verified                                         bool
+	verify                                           bool
 }
 
 func getNodeSize(size string) string {
@@ -38,7 +38,12 @@ func getNodeSize(size string) string {
 func RunKOPS(event KopsEvent) {
 	var kopsCMD *exec.Cmd
 
-	listClusters(event.bucket)
+	home, _ := os.LookupEnv("HOME")
+
+	err := os.Setenv("KUBECONFIG", home+"/.dispatch/.kube/config")
+	if err != nil {
+		reportErr(err, "set KUBECONFIG environment variable")
+	}
 
 	switch event.action {
 	case "create":
@@ -61,6 +66,14 @@ func RunKOPS(event KopsEvent) {
 			"--authorization=RBAC",
 			"--yes",
 		)
+
+		fmt.Printf("\n"+`
+Create cluster details
+  - name: %s
+  - kubernetes version: %s
+  - size: %s
+  - nodes: %s`+"\n", event.name, event.version, event.size, event.count)
+
 	case "delete":
 		kopsCMD = exec.Command(
 			"kops", "delete", "cluster",
@@ -73,9 +86,18 @@ func RunKOPS(event KopsEvent) {
 		os.Exit(1)
 	}
 
-	fmt.Print(event)
+	if !event.verify {
+		var valid string
 
-	fmt.Printf("\nPerforming %s action for cluster %s:\n", event.action, event.name)
+		fmt.Printf("\n ? %s cluster %s (y/n): ", event.action, event.name)
+		fmt.Scanf("%s", &valid)
+
+		if valid != "Y" && valid != "y" {
+			os.Exit(0)
+		}
+	}
+
+	fmt.Printf("\n\nPerforming %s action for cluster %s:\n", event.action, event.name)
 	stdout, err := kopsCMD.StdoutPipe()
 	if err != nil {
 		reportErr(err, "display KOPS stdout")
@@ -95,4 +117,9 @@ func RunKOPS(event KopsEvent) {
 	}
 
 	fmt.Printf("%s\n", string(data))
+
+	if event.action == "create" {
+		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.name)
+		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.name)
+	}
 }
