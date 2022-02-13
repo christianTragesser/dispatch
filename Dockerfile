@@ -10,6 +10,7 @@ ADD go.mod .
 ADD go.sum .
 ADD main.go .
 COPY dispatch ./dispatch
+COPY status ./status
 
 RUN go get -d -v
 
