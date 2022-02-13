@@ -16,9 +16,11 @@ func CLIOption() KopsEvent {
 	createSize := createCommand.String("size", "small", "cluster node size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", "1.21.9", "Kubernetes version")
+	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
 
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteName := deleteCommand.String("name", "", "cluster name")
+	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	switch action {
 	case "create":
@@ -30,6 +32,7 @@ func CLIOption() KopsEvent {
 			size:    *createSize,
 			count:   *nodeCount,
 			version: *createVersion,
+			verify:  *createYOLO,
 		}
 
 	case "delete":
@@ -38,6 +41,7 @@ func CLIOption() KopsEvent {
 		eventOptions = KopsEvent{
 			action: action,
 			name:   *deleteName,
+			verify: *deleteYOLO,
 		}
 
 	case "-h":
@@ -45,9 +49,9 @@ func CLIOption() KopsEvent {
 		os.Exit(0)
 
 	default:
-		fmt.Printf(" ! %s is not a valid Dispatch option\n", os.Args[1])
-		fmt.Println("Only available:", createCommand.Args())
-		os.Exit(1)
+		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
+		fmt.Printf("\ntry:\n dispatch create -h\n\n or\n\n dispatch delete -h\n\n")
+		os.Exit(0)
 	}
 
 	return eventOptions
