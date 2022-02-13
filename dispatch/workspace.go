@@ -133,7 +133,7 @@ func ensureDispatchConfig(homeDir string) string {
 
 		dispatchUID = configMap["uid"]
 
-		fmt.Printf(" . Found Dispatch UID '%s'\n", configMap["uid"])
+		fmt.Printf(" . Found user ID '%s'\n", configMap["uid"])
 
 	}
 
