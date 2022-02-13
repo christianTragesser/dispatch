@@ -10,7 +10,7 @@ import (
 var ASCII_ART string = "\n" + `______  _____ _______  _____  _______ _______ _______ _     _
 |     \   |   |______ |_____] |_____|    |    |       |_____|
 |_____/ __|__ ______| |       |     |    |    |______ |     |   
-` + "\n\n"
+` + "\n"
 
 func main() {
 	var sessionEvent dispatch.KopsEvent
