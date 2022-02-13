@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	status "github.com/christiantragesser/dispatch/status"
 )
 
 const (
@@ -97,7 +99,8 @@ Create cluster details
 		}
 	}
 
-	fmt.Printf("\n\nPerforming %s action for cluster %s:\n", event.action, event.name)
+	fmt.Printf("\n\n Performing %s action for cluster %s\n", event.action, event.name)
+
 	stdout, err := kopsCMD.StdoutPipe()
 	if err != nil {
 		reportErr(err, "display KOPS stdout")
@@ -106,6 +109,8 @@ Create cluster details
 	if err := kopsCMD.Start(); err != nil {
 		reportErr(err, "start KOPS command")
 	}
+
+	status.Bar()
 
 	data, err := ioutil.ReadAll(stdout)
 	if err != nil {
