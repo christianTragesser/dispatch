@@ -167,7 +167,9 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	return kopsBucket
 }
 
-func listClusters(bucket string) {
+func getClusters(bucket string) []string {
+	var clusters []string
+
 	clientConfig := awsClientConfig()
 
 	s3Client := s3.NewFromConfig(*clientConfig)
@@ -183,9 +185,21 @@ func listClusters(bucket string) {
 	}
 
 	if len(objects.CommonPrefixes) > 0 {
-		fmt.Print(" - Found existing KOPS clusters:\n")
 		for _, item := range objects.CommonPrefixes {
-			fmt.Printf("\t <> %s \n", strings.Trim(*item.Prefix, "/"))
+			clusters = append(clusters, strings.Trim(*item.Prefix, "/"))
+		}
+	}
+
+	return clusters
+}
+
+func listClusters(bucket string) {
+	clusters := getClusters(bucket)
+
+	if len(clusters) > 0 {
+		fmt.Print(" - Found existing KOPS clusters:\n")
+		for _, item := range clusters {
+			fmt.Printf("\t <> %s \n", item)
 		}
 	} else {
 		fmt.Print(" . No existing clusters found\n")

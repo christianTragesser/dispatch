@@ -37,6 +37,16 @@ func getNodeSize(size string) string {
 	return ec2Instance
 }
 
+func clusterExists(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
 func RunKOPS(event KopsEvent) {
 	var kopsCMD *exec.Cmd
 
@@ -49,40 +59,55 @@ func RunKOPS(event KopsEvent) {
 
 	switch event.action {
 	case "create":
-		zones := getZones()
-		nodeSize := getNodeSize(event.size)
-		labels := "owner=" + event.user + ", CreatedBy=Dispatch"
+		existingClusters := getClusters(event.bucket)
 
-		kopsCMD = exec.Command(
-			"kops", "create", "cluster",
-			"--kubernetes-version="+event.version,
-			"--state=s3://"+event.bucket,
-			"--node-count="+event.count,
-			"--node-size="+nodeSize,
-			"--cloud-labels="+labels,
-			"--name="+event.name,
-			"--zones="+zones,
-			"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
-			"--topology=private",
-			"--networking=weave",
-			"--authorization=RBAC",
-			"--yes",
-		)
+		if clusterExists(existingClusters, event.name) {
+			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.name)
+			os.Exit(1)
+		} else {
+			zones := getZones()
+			nodeSize := getNodeSize(event.size)
+			labels := "owner=" + event.user + ", CreatedBy=Dispatch"
 
-		fmt.Printf("\n"+`
+			kopsCMD = exec.Command(
+				"kops", "create", "cluster",
+				"--kubernetes-version="+event.version,
+				"--state=s3://"+event.bucket,
+				"--node-count="+event.count,
+				"--node-size="+nodeSize,
+				"--cloud-labels="+labels,
+				"--name="+event.name,
+				"--zones="+zones,
+				"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
+				"--topology=private",
+				"--networking=weave",
+				"--authorization=RBAC",
+				"--yes",
+			)
+
+			fmt.Printf("\n"+`
 Create cluster details
   - name: %s
   - kubernetes version: %s
   - size: %s
   - nodes: %s`+"\n", event.name, event.version, event.size, event.count)
+		}
 
 	case "delete":
-		kopsCMD = exec.Command(
-			"kops", "delete", "cluster",
-			"--name="+event.name,
-			"--state=s3://"+event.bucket,
-			"--yes",
-		)
+		existingClusters := getClusters(event.bucket)
+
+		if clusterExists(existingClusters, event.name) {
+			kopsCMD = exec.Command(
+				"kops", "delete", "cluster",
+				"--name="+event.name,
+				"--state=s3://"+event.bucket,
+				"--yes",
+			)
+		} else {
+			fmt.Printf("\n ! Unknown KOPS cluster: %s\n\n", event.name)
+			os.Exit(1)
+		}
+
 	default:
 		fmt.Print(" ! Unknown KOPS event\n")
 		os.Exit(1)
