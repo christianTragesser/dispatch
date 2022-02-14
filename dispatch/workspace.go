@@ -98,9 +98,10 @@ func ensureKubeConfig(kubeDir string) {
 
 }
 
-func ensureDispatchConfig(homeDir string) string {
+func ensureDispatchConfig(dispatchDir string) string {
 	var dispatchUID string
-	configFile := homeDir + "/.config"
+
+	configFile := dispatchDir + "/dispatch.conf"
 
 	_, readErr := os.Stat(configFile)
 
@@ -142,6 +143,7 @@ func ensureDispatchConfig(homeDir string) string {
 
 func ensureWorkspace() string {
 	var dispatchUID string
+
 	home, homeSet := os.LookupEnv("HOME")
 
 	if homeSet {
