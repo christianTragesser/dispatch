@@ -120,7 +120,7 @@ Create cluster details
 		fmt.Scanf("%s", &valid)
 
 		if valid != "Y" && valid != "y" {
-			os.Exit(0)
+			os.Exit(1)
 		}
 	}
 
