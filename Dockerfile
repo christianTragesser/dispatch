@@ -11,28 +11,30 @@ ADD go.sum .
 ADD main.go .
 COPY dispatch ./dispatch
 COPY status ./status
+COPY tuiaction ./tuiaction
+COPY tuicreate ./tuicreate
+COPY tuidelete ./tuidelete
 
 RUN go get -d -v
 
 FROM source as linux-build
-WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' -a \
-    -o /go/bin/dispatch-amd64-linux .
+    -o /go/bin/dispatch-linux-amd64 .
 
 FROM source AS macos-build
 RUN CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' -a \
-    -o /go/bin/dispatch-amd64-darwin .
+    -o /go/bin/dispatch-darwin-amd64 . 
 
 FROM scratch AS linux-binary
-COPY --from=linux-build /go/bin/dispatch-amd64-linux /dispatch-amd64-linux
+COPY --from=linux-build /go/bin/dispatch-amd64-linux /dispatch-linux-amd64
 
 FROM scratch AS macos-binary
-COPY --from=macos-build /go/bin/dispatch-amd64-darwin /dispatch-amd64-darwin
+COPY --from=macos-build /go/bin/dispatch-amd64-darwin /dispatch-darwin-amd64
 
 FROM gcr.io/distroless/static as publish
 COPY --from=source /usr/local/bin/kops /usr/local/bin/kops
-COPY --from=linux-build /go/bin/dispatch-amd64-linux /usr/local/bin/dispatch
+COPY --from=linux-build /go/bin/dispatch-linux-amd64 /usr/local/bin/dispatch
 
 CMD [ "dispatch" ]

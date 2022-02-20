@@ -4,6 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/christiantragesser/dispatch/tuiaction"
+	"github.com/christiantragesser/dispatch/tuicreate"
+	"github.com/christiantragesser/dispatch/tuidelete"
 )
 
 func CLIOption() KopsEvent {
@@ -52,6 +56,41 @@ func CLIOption() KopsEvent {
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
 		fmt.Printf("\ntry:\n dispatch create -h\n\n or\n\n dispatch delete -h\n\n")
 		os.Exit(0)
+	}
+
+	return eventOptions
+}
+
+func TUIOption() KopsEvent {
+	var eventOptions KopsEvent
+
+	action := tuiaction.Action()
+
+	switch action {
+	case "create":
+		createInfo := tuicreate.Create()
+
+		eventOptions = KopsEvent{
+			action:  "create",
+			name:    createInfo[0],
+			size:    createInfo[1],
+			count:   createInfo[2],
+			version: "1.21.9",
+			verify:  false,
+		}
+
+	case "delete":
+		deleteInfo := tuidelete.Delete()
+
+		eventOptions = KopsEvent{
+			action: "delete",
+			name:   deleteInfo[0],
+			verify: false,
+		}
+
+	default:
+		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
+		os.Exit(1)
 	}
 
 	return eventOptions
