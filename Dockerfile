@@ -20,18 +20,22 @@ RUN go get -d -v
 FROM source as linux-build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' -a \
-    -o /go/bin/dispatch-linux-amd64 .
+    -o /go/bin/dispatch-linux-amd64 . && \
+    sha256sum /go/bin/dispatch-linux-amd64 > /opt/dispatch-linux-amd64.sha256
 
 FROM source AS macos-build
 RUN CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' -a \
-    -o /go/bin/dispatch-darwin-amd64 . 
+    -o /go/bin/dispatch-darwin-amd64 . && \
+    sha256sum /go/bin/dispatch-darwin-amd64 > /opt/dispatch-darwin-amd64.sha256
 
 FROM scratch AS linux-binary
 COPY --from=linux-build /go/bin/dispatch-linux-amd64 /dispatch-linux-amd64
+COPY --from=linux-build /opt/dispatch-linux-amd64.sha256 /dispatch-linux-amd64.sha256
 
 FROM scratch AS macos-binary
 COPY --from=macos-build /go/bin/dispatch-darwin-amd64 /dispatch-darwin-amd64
+COPY --from=macos-build /opt/dispatch-darwin-amd64.sha256 /dispatch-darwin-amd64.sha256
 
 FROM gcr.io/distroless/static as publish
 COPY --from=source /usr/local/bin/kops /usr/local/bin/kops
