@@ -1,32 +1,40 @@
-FROM python:3-alpine as base
+FROM docker.io/library/golang:alpine AS source
 
-FROM base as python
-RUN pip install --no-cache-dir awscli boto3 requests && \
-    mkdir -p /opt/dispatch
-ADD src/*.py /opt/dispatch/
-
-FROM python as lint
-RUN pip install pylint && \
-    cd /opt && \
-    pylint ./dispatch
-
-FROM python as publish
-#install KOPS
-#RUN KOPS_VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4) && \
-RUN KOPS_VERSION="v1.21.4" && \
-    apk add --no-cache curl openssh-keygen && \
+RUN apk --no-cache add curl && \
+    KOPS_VERSION="v1.21.4" && \
     curl -Lo /usr/local/bin/kops https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
     chmod +x /usr/local/bin/kops
 
-#install kubectl
-RUN KUBE_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) && \
-    curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl && \
-    chmod +x /usr/local/bin/kubectl
+WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
+ADD go.mod .
+ADD go.sum .
+ADD main.go .
+COPY dispatch ./dispatch
+COPY status ./status
+COPY tuiaction ./tuiaction
+COPY tuicreate ./tuicreate
+COPY tuidelete ./tuidelete
 
-#install Helm
-RUN HELM_VERSION=$(curl -s https://github.com/helm/helm/releases/latest | cut -d '/' -f 8 | sed 's/">redirected<//') && \
-    mkdir /opt/helm && \
-    curl https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz --directory /opt/helm && \
-    ln -s /opt/helm/linux-amd64/helm /usr/local/bin/helm
+RUN go get -d -v
 
-CMD ["python", "/opt/dispatch/main.py"]
+FROM source as linux-build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' -a \
+    -o /go/bin/dispatch-linux-amd64 .
+
+FROM source AS macos-build
+RUN CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' -a \
+    -o /go/bin/dispatch-darwin-amd64 . 
+
+FROM scratch AS linux-binary
+COPY --from=linux-build /go/bin/dispatch-linux-amd64 /dispatch-linux-amd64
+
+FROM scratch AS macos-binary
+COPY --from=macos-build /go/bin/dispatch-darwin-amd64 /dispatch-darwin-amd64
+
+FROM gcr.io/distroless/static as publish
+COPY --from=source /usr/local/bin/kops /usr/local/bin/kops
+COPY --from=linux-build /go/bin/dispatch-linux-amd64 /usr/local/bin/dispatch
+
+CMD [ "dispatch" ]
