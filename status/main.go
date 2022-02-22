@@ -75,8 +75,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (e model) View() string {
 	pad := strings.Repeat(" ", padding)
 	return "\n" +
-		pad + e.progress.View() + "\n\n" +
-		pad + helpStyle("Press any key to quit")
+		pad + e.progress.View() + "\n\n"
 }
 
 func tickCmd() tea.Cmd {
