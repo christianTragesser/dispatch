@@ -2,6 +2,16 @@ variables:
   IMAGE_NAME: dispatch
   IMAGE_FILE_PATH: $CI_PROJECT_DIR
 
+.build_rules:
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    changes:
+      - go.*
+      - main.go
+      - dispatch/*
+      - status/*
+      - tui*/*
+      - Dockerfile
+
 include:
   - project: christiantragesser/gitlab-ci-templates
     ref: master
@@ -18,14 +28,7 @@ publish:container:
   variables:
     DOCKER_BUILD_STAGE: publish
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      changes:
-        - go.*
-        - main.go
-        - dispatch/*
-        - status/*
-        - Dockerfile
-      when: always
+    - !reference [.build_rules]
 
 publish:linux:
   stage: publish
@@ -42,13 +45,7 @@ publish:linux:
       - dispatch-linux-amd64
       - dispatch-linux-amd64.sha256
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      changes:
-        - go.*
-        - main.go
-        - dispatch/*
-        - status/*
-        - Dockerfile
+    - !reference [.build_rules]
 
 publish:macos:
   stage: publish
@@ -65,10 +62,4 @@ publish:macos:
       - dispatch-darwin-amd64
       - dispatch-darwin-amd64.sha256
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      changes:
-        - go.*
-        - main.go
-        - dispatch/*
-        - status/*
-        - Dockerfile
+    - !reference [.build_rules]
