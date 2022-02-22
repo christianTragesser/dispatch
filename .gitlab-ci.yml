@@ -36,11 +36,9 @@ publish:linux:
     KANIKO_ADDITIONAL_ARGS: --destination registry.local/image:latest --no-push --ignore-path /dispatch-linux-amd64 --ignore-path /dispatch-linux-amd64.sha256
   after_script:
     - cp /dispatch-linux-amd64 $CI_PROJECT_DIR
-    - cp /dispatch-linux-amd64.sha256 $CI_PROJECT_DIR
   artifacts:
     paths:
       - dispatch-linux-amd64
-      - dispatch-linux-amd64.sha256
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
@@ -59,11 +57,9 @@ publish:macos:
     KANIKO_ADDITIONAL_ARGS: --destination registry.local/image:latest --no-push --ignore-path /dispatch-darwin-amd64 --ignore-path /dispatch-darwin-amd64.sha256
   after_script:
     - cp /dispatch-darwin-amd64 $CI_PROJECT_DIR
-    - cp /dispatch-darwin-amd64.sha256 $CI_PROJECT_DIR
   artifacts:
     paths:
       - dispatch-darwin-amd64
-      - dispatch-darwin-amd64.sha256
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
