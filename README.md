@@ -11,7 +11,7 @@ A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https
   - `AmazonVPCFullAccess`
 * [kOps](https://github.com/kubernetes/kops/releases) installed and found in `$PATH`
 
-Alternatively, Dispatch is available as a container image which includes kOps.
+Alternatively, Dispatch is available as a [container image](https://gitlab.com/christianTragesser/dispatch/container_registry/) which includes kOps.
 
 #### AWS Credentials
 AWS credentials are configured by environment variables (precedence) or the `default` profile in `$HOME/.aws/credentials`.  
@@ -23,7 +23,7 @@ The following environment variables must be configured if AWS credentials are no
 
 ### Install
 * [Linux](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:linux)
-* [MacOS](https://gitlab.com/christianTragesser/aws-access-key-manager/-/jobs/artifacts/master/download?job=publish:macos)
+* [MacOS](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:macos)
 
 ### Use
 Run `dispatch` to start a session.
