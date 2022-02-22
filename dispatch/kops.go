@@ -104,7 +104,7 @@ Create cluster details
 				"--yes",
 			)
 		} else {
-			fmt.Printf("\n ! Unknown KOPS cluster: %s\n\n", event.name)
+			fmt.Printf("\n ! Unknown KOPS cluster %s\n\n", event.name)
 			os.Exit(1)
 		}
 
