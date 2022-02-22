@@ -43,14 +43,14 @@ func initialModel() model {
 
 		switch i {
 		case 0:
-			t.Placeholder = "Cluster Name"
+			t.Placeholder = "Cluster Name (default: dispatch.k8s.local)"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
 		case 1:
-			t.Placeholder = "Node Size"
+			t.Placeholder = "Node Size S/M/L (default: S)"
 		case 2:
-			t.Placeholder = "Node Count"
+			t.Placeholder = "Node Count (default: 2)"
 		}
 
 		m.inputs[i] = t
@@ -151,10 +151,6 @@ func (m model) View() string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(m.cursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
-
 	return b.String()
 }
 
@@ -162,6 +158,16 @@ func Create() []string {
 	if err := tea.NewProgram(initialModel()).Start(); err != nil {
 		fmt.Printf("could not start program: %s\n", err)
 		os.Exit(1)
+	}
+
+	if eventOptions[0] == "" {
+		eventOptions[0] = "dispatch.k8s.local"
+	}
+	if eventOptions[1] == "" {
+		eventOptions[1] = "small"
+	}
+	if eventOptions[2] == "" {
+		eventOptions[2] = "2"
 	}
 
 	return eventOptions

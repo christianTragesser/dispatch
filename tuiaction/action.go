@@ -90,7 +90,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("Please provide the following %s action info", m.choice))
+		return quitTextStyle.Render(fmt.Sprintf("%s cluster required details:", m.choice))
 	}
 	if m.quitting {
 		return quitTextStyle.Render("Exiting.")
@@ -121,6 +121,5 @@ func Action() string {
 		os.Exit(1)
 	}
 
-	fmt.Print(option)
 	return option
 }
