@@ -69,7 +69,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
+		case "ctrl+c", "esc":
 			m.quitting = true
 			return m, tea.Quit
 
@@ -119,6 +119,10 @@ func Action() string {
 	if err := tea.NewProgram(m).Start(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
+	}
+
+	if option == "" {
+		os.Exit(0)
 	}
 
 	return option

@@ -43,7 +43,7 @@ func initialModel() model {
 
 		switch i {
 		case 0:
-			t.Placeholder = "Cluster Name (default: dispatch.k8s.local)"
+			t.Placeholder = "Cluster FQDN (default: dispatch.k8s.local)"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
@@ -160,12 +160,18 @@ func Create() []string {
 		os.Exit(1)
 	}
 
+	if len(eventOptions) == 0 {
+		os.Exit(0)
+	}
+
 	if eventOptions[0] == "" {
 		eventOptions[0] = "dispatch.k8s.local"
 	}
+
 	if eventOptions[1] == "" {
 		eventOptions[1] = "small"
 	}
+
 	if eventOptions[2] == "" {
 		eventOptions[2] = "2"
 	}

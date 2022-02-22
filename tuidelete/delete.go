@@ -43,7 +43,7 @@ func initialModel() model {
 
 		switch i {
 		case 0:
-			t.Placeholder = "Cluster Name"
+			t.Placeholder = "Cluster FQDN"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
@@ -158,6 +158,10 @@ func Delete() []string {
 	if err := tea.NewProgram(initialModel()).Start(); err != nil {
 		fmt.Printf("could not start program: %s\n", err)
 		os.Exit(1)
+	}
+
+	if len(eventOptions) == 0 {
+		os.Exit(0)
 	}
 
 	return eventOptions
