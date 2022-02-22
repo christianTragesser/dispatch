@@ -11,11 +11,11 @@ A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https
   - `AmazonVPCFullAccess`
 * [kOps](https://github.com/kubernetes/kops/releases) installed and found in `$PATH`
 
-Alternatively, Dispatch is available as a [container image](https://gitlab.com/christianTragesser/dispatch/container_registry/) which includes kOps.
+Alternatively, Dispatch is available as a [container image](https://gitlab.com/christianTragesser/dispatch/container_registry/) providing a runtime which includes kOps.
 
 #### AWS Credentials
 AWS credentials are configured by environment variables (precedence) or the `default` profile in `$HOME/.aws/credentials`.  
-The following environment variables must be configured if AWS credentials are not provided by the `default` profile in the credentials file:
+The following environment variables must be configured if the `default` AWS profile is not used:
   - `AWS_REGION`
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
@@ -66,22 +66,22 @@ Usage of create:
     	skip verification prompt for cluster creation
 ```
 ```
-$ dispatch -name my-cluster -nodes 10 -size large -yolo true
+$ dispatch -name my-cluster.k8s.local -nodes 10 -size large -yolo true
 ```
 #### Delete
 ```
 $ dispatch delete -h
 Usage of delete:
-  -name string
+  -fqdn string
     	Cluster FQDN
   -yolo
     	skip verification prompt for cluster deletion
 ```
 ```
-$ dispatch delete -name my-cluster
+$ dispatch delete -name my-cluster.k8s.local
 ```
 
-#### Docker CLI Parameters
+#### CLI Parameters With Docker
 ```
 docker run --rm -it \
        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -89,5 +89,5 @@ docker run --rm -it \
        -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
        -v $HOME:/root \
        registry.gitlab.com/christiantragesser/dispatch \
-       dispatch create -name my-cluster -nodes 10 -size large
+       dispatch create -name my-cluster.k8s.local -nodes 10 -size large
 ```
