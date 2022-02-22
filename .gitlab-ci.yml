@@ -18,7 +18,7 @@ publish:container:
   variables:
     DOCKER_BUILD_STAGE: publish
   rules:
-    - if: $CI_COMMIT_BRANCH == 'golang-refactor'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - go.*
         - main.go
@@ -40,7 +40,7 @@ publish:linux:
     paths:
       - dispatch-linux-amd64
   rules:
-    - if: $CI_COMMIT_BRANCH == 'golang-refactor'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - go.*
         - main.go
@@ -61,7 +61,7 @@ publish:macos:
     paths:
       - dispatch-darwin-amd64
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - go.*
         - main.go
