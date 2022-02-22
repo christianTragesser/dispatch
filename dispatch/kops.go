@@ -16,7 +16,7 @@ const (
 )
 
 type KopsEvent struct {
-	action, bucket, count, name, size, user, version string
+	action, bucket, count, fqdn, size, user, version string
 	verify                                           bool
 }
 
@@ -61,8 +61,8 @@ func RunKOPS(event KopsEvent) {
 	case "create":
 		existingClusters := getClusters(event.bucket)
 
-		if clusterExists(existingClusters, event.name) {
-			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.name)
+		if clusterExists(existingClusters, event.fqdn) {
+			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.fqdn)
 			os.Exit(1)
 		} else {
 			zones := getZones()
@@ -76,7 +76,7 @@ func RunKOPS(event KopsEvent) {
 				"--node-count="+event.count,
 				"--node-size="+nodeSize,
 				"--cloud-labels="+labels,
-				"--name="+event.name,
+				"--name="+event.fqdn,
 				"--zones="+zones,
 				"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
 				"--topology=private",
@@ -90,21 +90,21 @@ Create cluster details
   - name: %s
   - kubernetes version: %s
   - size: %s
-  - nodes: %s`+"\n", event.name, event.version, event.size, event.count)
+  - nodes: %s`+"\n", event.fqdn, event.version, event.size, event.count)
 		}
 
 	case "delete":
 		existingClusters := getClusters(event.bucket)
 
-		if clusterExists(existingClusters, event.name) {
+		if clusterExists(existingClusters, event.fqdn) {
 			kopsCMD = exec.Command(
 				"kops", "delete", "cluster",
-				"--name="+event.name,
+				"--name="+event.fqdn,
 				"--state=s3://"+event.bucket,
 				"--yes",
 			)
 		} else {
-			fmt.Printf("\n ! Unknown KOPS cluster %s\n\n", event.name)
+			fmt.Printf("\n ! Unknown KOPS cluster %s\n\n", event.fqdn)
 			os.Exit(1)
 		}
 
@@ -116,15 +116,15 @@ Create cluster details
 	if !event.verify {
 		var valid string
 
-		fmt.Printf("\n ? %s cluster %s (y/n): ", event.action, event.name)
+		fmt.Printf("\n ? %s cluster %s (y/n): ", event.action, event.fqdn)
 		fmt.Scanf("%s", &valid)
 
 		if valid != "Y" && valid != "y" {
-			os.Exit(1)
+			os.Exit(0)
 		}
 	}
 
-	fmt.Printf("\n\n Performing %s action for cluster %s\n", event.action, event.name)
+	fmt.Printf("\n\n Performing %s action for cluster %s\n", event.action, event.fqdn)
 
 	stdout, err := kopsCMD.StdoutPipe()
 	if err != nil {
@@ -149,7 +149,7 @@ Create cluster details
 	fmt.Printf("%s\n", string(data))
 
 	if event.action == "create" {
-		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.name)
-		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.name)
+		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.fqdn)
+		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.fqdn)
 	}
 }

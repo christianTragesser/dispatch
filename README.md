@@ -22,6 +22,13 @@ The following environment variables must be configured if AWS credentials are no
   - `AWS_SESSION_TOKEN`
 
 ### Install
+#### Build From Source
+Clone this repository to `$GOPATH` location and build Go binary
+```
+ $ go build -o ~/dispatch .
+```
+
+#### Binary (AMD64)
 * [Linux](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:linux)
 * [MacOS](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:macos)
 
@@ -47,8 +54,8 @@ Sessions can also be implemented via CLI subcommands
 ```
 $ dispatch create -h
 Usage of create:
-  -name string
-    	cluster name (default "dispatch.k8s.local")
+  -fqdn string
+    	Cluster FQDN (default "dispatch.k8s.local")
   -nodes string
     	cluster node count (default "2")
   -size string
@@ -66,7 +73,7 @@ $ dispatch -name my-cluster -nodes 10 -size large -yolo true
 $ dispatch delete -h
 Usage of delete:
   -name string
-    	cluster name
+    	Cluster FQDN
   -yolo
     	skip verification prompt for cluster deletion
 ```

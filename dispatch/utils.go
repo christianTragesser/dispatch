@@ -14,14 +14,14 @@ func CLIOption(event KopsEvent) KopsEvent {
 	action := os.Args[1]
 
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createName := createCommand.String("name", "dispatch.k8s.local", "cluster name")
+	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", "1.21.9", "Kubernetes version")
 	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
 
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
-	deleteName := deleteCommand.String("name", "", "cluster name")
+	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	switch action {
@@ -29,7 +29,7 @@ func CLIOption(event KopsEvent) KopsEvent {
 		createCommand.Parse(os.Args[2:])
 
 		event.action = action
-		event.name = *createName
+		event.fqdn = *createFQDN
 		event.size = *createSize
 		event.count = *nodeCount
 		event.version = *createVersion
@@ -39,7 +39,7 @@ func CLIOption(event KopsEvent) KopsEvent {
 		deleteCommand.Parse(os.Args[2:])
 
 		event.action = action
-		event.name = *deleteName
+		event.fqdn = *deleteFQDN
 		event.verify = *deleteYOLO
 
 	case "-h":
@@ -63,7 +63,7 @@ func TUIOption(event KopsEvent) KopsEvent {
 		createInfo := tuicreate.Create()
 
 		event.action = action
-		event.name = createInfo[0]
+		event.fqdn = createInfo[0]
 		event.size = createInfo[1]
 		event.count = createInfo[2]
 		event.version = "1.21.9"
@@ -72,7 +72,7 @@ func TUIOption(event KopsEvent) KopsEvent {
 		deleteInfo := tuidelete.Delete()
 
 		event.action = action
-		event.name = deleteInfo[0]
+		event.fqdn = deleteInfo[0]
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
