@@ -10,9 +10,7 @@ import (
 	"github.com/christiantragesser/dispatch/tuidelete"
 )
 
-func CLIOption() KopsEvent {
-	var eventOptions KopsEvent
-
+func CLIOption(event KopsEvent) KopsEvent {
 	action := os.Args[1]
 
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
@@ -30,23 +28,19 @@ func CLIOption() KopsEvent {
 	case "create":
 		createCommand.Parse(os.Args[2:])
 
-		eventOptions = KopsEvent{
-			action:  action,
-			name:    *createName,
-			size:    *createSize,
-			count:   *nodeCount,
-			version: *createVersion,
-			verify:  *createYOLO,
-		}
+		event.action = action
+		event.name = *createName
+		event.size = *createSize
+		event.count = *nodeCount
+		event.version = *createVersion
+		event.verify = *createYOLO
 
 	case "delete":
 		deleteCommand.Parse(os.Args[2:])
 
-		eventOptions = KopsEvent{
-			action: action,
-			name:   *deleteName,
-			verify: *deleteYOLO,
-		}
+		event.action = action
+		event.name = *deleteName
+		event.verify = *deleteYOLO
 
 	case "-h":
 		fmt.Printf("Dispatch options:\n dispatch create -h\n dispatch delete -h\n")
@@ -58,45 +52,39 @@ func CLIOption() KopsEvent {
 		os.Exit(0)
 	}
 
-	return eventOptions
+	return event
 }
 
-func TUIOption() KopsEvent {
-	var eventOptions KopsEvent
-
+func TUIOption(event KopsEvent) KopsEvent {
 	action := tuiaction.Action()
 
 	switch action {
 	case "create":
 		createInfo := tuicreate.Create()
 
-		eventOptions = KopsEvent{
-			action:  "create",
-			name:    createInfo[0],
-			size:    createInfo[1],
-			count:   createInfo[2],
-			version: "1.21.9",
-			verify:  false,
-		}
+		event.action = action
+		event.name = createInfo[0]
+		event.size = createInfo[1]
+		event.count = createInfo[2]
+		event.version = "1.21.9"
 
 	case "delete":
 		deleteInfo := tuidelete.Delete()
 
-		eventOptions = KopsEvent{
-			action: "delete",
-			name:   deleteInfo[0],
-			verify: false,
-		}
+		event.action = action
+		event.name = deleteInfo[0]
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
 		os.Exit(1)
 	}
 
-	return eventOptions
+	return event
 }
 
-func EnsureDependencies(kopsSession KopsEvent) KopsEvent {
+func EnsureDependencies() KopsEvent {
+	var kopsSession KopsEvent
+
 	fmt.Print("\nEnsuring dependencies:\n")
 
 	ensureInstall("kops")
