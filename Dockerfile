@@ -28,10 +28,10 @@ RUN CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
     -o /go/bin/dispatch-darwin-amd64 . 
 
 FROM scratch AS linux-binary
-COPY --from=linux-build /go/bin/dispatch-amd64-linux /dispatch-linux-amd64
+COPY --from=linux-build /go/bin/dispatch-linux-amd64 /dispatch-linux-amd64
 
 FROM scratch AS macos-binary
-COPY --from=macos-build /go/bin/dispatch-amd64-darwin /dispatch-darwin-amd64
+COPY --from=macos-build /go/bin/dispatch-darwin-amd64 /dispatch-darwin-amd64
 
 FROM gcr.io/distroless/static as publish
 COPY --from=source /usr/local/bin/kops /usr/local/bin/kops
