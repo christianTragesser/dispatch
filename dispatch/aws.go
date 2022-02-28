@@ -205,3 +205,20 @@ func listClusters(bucket string) {
 		fmt.Print(" . No existing clusters found\n")
 	}
 }
+
+func getObjectMetadata(bucket string, cluster string) *s3.HeadObjectOutput {
+	clientConfig := awsClientConfig()
+	s3Client := s3.NewFromConfig(*clientConfig)
+
+	input := &s3.HeadObjectInput{
+		Bucket: &bucket,
+		Key:    aws.String(cluster + "/config"),
+	}
+
+	metadata, err := s3Client.HeadObject(context.TODO(), input)
+	if err != nil {
+		metadata = &s3.HeadObjectOutput{LastModified: nil}
+	}
+
+	return metadata
+}

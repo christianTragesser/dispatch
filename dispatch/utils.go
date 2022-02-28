@@ -7,8 +7,21 @@ import (
 
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
-	"github.com/christiantragesser/dispatch/tuidelete"
 )
+
+type cluster struct {
+	name, date string
+}
+
+func getCreationDate(bucket string, cluster string) string {
+	metadata := getObjectMetadata(bucket, cluster)
+
+	if metadata.LastModified == nil {
+		return "not found"
+	}
+
+	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
+}
 
 func CLIOption(event KopsEvent) KopsEvent {
 	action := os.Args[1]
@@ -69,10 +82,24 @@ func TUIOption(event KopsEvent) KopsEvent {
 		event.version = "1.21.9"
 
 	case "delete":
-		deleteInfo := tuidelete.Delete()
+		currentClusters := []cluster{}
 
-		event.action = action
-		event.fqdn = deleteInfo[0]
+		clusters := getClusters(event.bucket)
+
+		for i := range clusters {
+			item := cluster{}
+			item.name = clusters[i]
+			item.date = getCreationDate(event.bucket, clusters[i])
+			currentClusters = append(currentClusters, item)
+		}
+
+		if len(currentClusters) > 0 {
+			event.fqdn = selectCluster(currentClusters)
+			event.action = action
+		} else {
+			fmt.Print(" . No existing clusters to delete\n")
+			os.Exit(0)
+		}
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
