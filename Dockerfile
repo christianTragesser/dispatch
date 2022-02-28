@@ -13,7 +13,6 @@ COPY dispatch ./dispatch
 COPY status ./status
 COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
-COPY tuidelete ./tuidelete
 
 RUN go get -d -v
 
