@@ -93,6 +93,6 @@ docker run --rm -it \
 ```
 
 ### Cluster Fully Qualified Domain Name (FQDN)
-The simplest way to provision a cluster is using [kOps gossip dns](https://kops.sigs.k8s.io/gossip/) by providing a cluster FQDN which ends in `.k8s.local`.  
+The simplest way to provision a cluster is [kOps gossip dns](https://kops.sigs.k8s.io/gossip/), providing a cluster FQDN which ends in `.k8s.local`.  
 
 If you desire a publically resolvable cluster domain, the FQDN must use [AWS Route 53](https://aws.amazon.com/route53/) as its authoritative DNS servers and cluster resources must be provisioned in the appropriate AWS region.
