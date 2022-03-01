@@ -85,7 +85,7 @@ func RunKOPS(event KopsEvent) {
 				"--yes",
 			)
 
-			fmt.Printf("\n"+`
+			fmt.Printf(`
 Create cluster details
   - name: %s
   - kubernetes version: %s
