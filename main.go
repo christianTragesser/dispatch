@@ -15,7 +15,7 @@ var ASCII_ART string = "\n" + `______  _____ _______  _____  _______ _______ ___
 func main() {
 	var sessionEvent dispatch.KopsEvent
 
-	if len(os.Args) > 1 && (os.Args[1] == "-h" || os.Args[2] == "-h") {
+	if len(os.Args) > 1 {
 		dispatch.CLIOption(sessionEvent)
 	}
 
