@@ -22,13 +22,13 @@ The following environment variables must be configured if the `default` AWS prof
   - `AWS_SESSION_TOKEN`
 
 ### Install
-#### Build From Source
-Clone this repository to `$GOPATH` location and build Go binary
+#### Build Dispatch From Source
+Clone this repository to your local `$GOPATH` location and build the binary
 ```
  $GOPATH/dispatch $ go build -o /usr/local/bin/dispatch .
 ```
 
-#### Binary (AMD64)
+#### Download Dispatch Binary (AMD64)
 * [Linux](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:linux)
 * [MacOS](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:macos)
 
@@ -48,7 +48,7 @@ docker run --rm -it \
        registry.gitlab.com/christiantragesser/dispatch
 ```
 
-### CLI Parameters
+### CLI Arguments
 Sessions can also be implemented via CLI subcommands
 #### Create
 ```
@@ -81,7 +81,7 @@ Usage of delete:
 $ dispatch delete -name my-cluster.k8s.local
 ```
 
-#### CLI Parameters With Docker
+#### Docker CLI Arguments
 ```
 docker run --rm -it \
        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -91,3 +91,8 @@ docker run --rm -it \
        registry.gitlab.com/christiantragesser/dispatch \
        dispatch create -name my-cluster.k8s.local -nodes 10 -size large
 ```
+
+### Cluster Fully Qualified Domain Name (FQDN)
+The simplest way to provision a cluster is using [kOps gossip dns](https://kops.sigs.k8s.io/gossip/) by providing a cluster FQDN which ends in `.k8s.local`.  
+
+If you desire a publically resolvable cluster domain, the FQDN must use [AWS Route 53](https://aws.amazon.com/route53/) as its authoritative DNS servers and cluster resources must be provisioned in the appropriate AWS region.
