@@ -43,14 +43,14 @@ func initialModel() model {
 
 		switch i {
 		case 0:
-			t.Placeholder = "Cluster FQDN (default: dispatch.k8s.local)"
+			t.Placeholder = "cluster FQDN (default: dispatch.k8s.local)"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
 		case 1:
-			t.Placeholder = "Node Size S/M/L (default: S)"
+			t.Placeholder = "node size (S)mall/(M)edium/(L)arge (default: S)"
 		case 2:
-			t.Placeholder = "Node Count (default: 2)"
+			t.Placeholder = "node count (default: 2)"
 		}
 
 		m.inputs[i] = t
