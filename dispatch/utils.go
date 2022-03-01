@@ -51,6 +51,11 @@ func CLIOption(event KopsEvent) KopsEvent {
 	case "delete":
 		deleteCommand.Parse(os.Args[2:])
 
+		if *deleteFQDN == "" {
+			fmt.Print(" ! cluster FQDN is required\n\n")
+			os.Exit(0)
+		}
+
 		event.action = action
 		event.fqdn = *deleteFQDN
 		event.verify = *deleteYOLO
