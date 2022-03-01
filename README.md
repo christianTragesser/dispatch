@@ -25,7 +25,7 @@ The following environment variables must be configured if the `default` AWS prof
 #### Build From Source
 Clone this repository to `$GOPATH` location and build Go binary
 ```
- $ go build -o ~/dispatch .
+ $GOPATH/dispatch $ go build -o /usr/local/bin/dispatch .
 ```
 
 #### Binary (AMD64)
