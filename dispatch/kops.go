@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 
 	status "github.com/christiantragesser/dispatch/status"
 )
@@ -22,15 +23,18 @@ type KopsEvent struct {
 
 func getNodeSize(size string) string {
 	var ec2Instance string
-	switch size {
-	case "small":
+
+	nodeSize := strings.ToUpper(size)
+
+	switch nodeSize {
+	case "SMALL", "S":
 		ec2Instance = smallEC2
-	case "medium":
+	case "MEDIUM", "M":
 		ec2Instance = mediumEC2
-	case "large":
+	case "LARGE", "L":
 		ec2Instance = largeEC2
 	default:
-		fmt.Print(" ! Invalid EC2 instance size")
+		fmt.Printf(" ! Invalid EC2 instance size: %s\n", nodeSize)
 		os.Exit(1)
 	}
 
