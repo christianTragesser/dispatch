@@ -1,10 +1,5 @@
 FROM docker.io/library/golang:alpine AS source
 
-RUN apk --no-cache add curl && \
-    KOPS_VERSION="v1.21.4" && \
-    curl -Lo /usr/local/bin/kops https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
-    chmod +x /usr/local/bin/kops
-
 WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
 ADD go.mod .
 ADD go.sum .
@@ -37,7 +32,6 @@ COPY --from=macos-build /go/bin/dispatch-darwin-amd64 /dispatch-darwin-amd64
 COPY --from=macos-build /opt/dispatch-darwin-amd64.sha256 /dispatch-darwin-amd64.sha256
 
 FROM gcr.io/distroless/static as publish
-COPY --from=source /usr/local/bin/kops /usr/local/bin/kops
 COPY --from=linux-build /go/bin/dispatch-linux-amd64 /usr/local/bin/dispatch
 
 CMD [ "dispatch" ]
