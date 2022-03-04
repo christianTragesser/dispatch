@@ -1,6 +1,6 @@
 # Dispatch  
 [![pipeline status](https://gitlab.com/christianTragesser/dispatch/badges/master/pipeline.svg)](https://gitlab.com/christianTragesser/dispatch/commits/master)  
-A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https://kubernetes.io/) in AWS. Dispatch simplifies secure management of relatively short-lived kubernetes clusters.
+A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https://kubernetes.io/) in AWS. Dispatch simplifies secure management of relatively short-lived kubernetes clusters in AWS.
 
 ### Dependencies
 * AWS credentials associated with the following IAM policies:
@@ -9,7 +9,7 @@ A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https
   - `AmazonS3FullAccess`
   - `IAMFullAccess`
   - `AmazonVPCFullAccess`
-* Docker (if container image is preferred over binary install)
+* Docker (container image use only)
 
 
 #### AWS Authentication and Configuration
@@ -109,11 +109,7 @@ $ dispatch delete -name my-cluster.k8s.local
 
 #### Docker CLI Arguments
 ```
-docker run --rm -it \
-       -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-       -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-       -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-       -v $HOME:/root \
+docker run --rm -it -v $HOME:/root \
        registry.gitlab.com/christiantragesser/dispatch \
        dispatch create -name my-cluster.k8s.local -nodes 10 -size large
 ```
