@@ -30,7 +30,7 @@ func CLIOption(event KopsEvent) KopsEvent {
 	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
-	createVersion := createCommand.String("version", "1.21.9", "Kubernetes version")
+	createVersion := createCommand.String("version", K8S_VERSION, "Kubernetes version")
 	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
 
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
@@ -84,7 +84,7 @@ func TUIOption(event KopsEvent) KopsEvent {
 		event.fqdn = createInfo[0]
 		event.size = createInfo[1]
 		event.count = createInfo[2]
-		event.version = "1.21.9"
+		event.version = K8S_VERSION
 
 	case "delete":
 		currentClusters := []cluster{}
@@ -118,8 +118,6 @@ func EnsureDependencies() KopsEvent {
 	var kopsSession KopsEvent
 
 	fmt.Print("\nEnsuring dependencies:\n")
-
-	ensureInstall("kops")
 
 	kopsSession.user = ensureWorkspace()
 
