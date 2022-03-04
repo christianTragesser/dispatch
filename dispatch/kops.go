@@ -11,9 +11,11 @@ import (
 )
 
 const (
-	smallEC2  string = "t2.medium"
-	mediumEC2 string = "t2.xlarge"
-	largeEC2  string = "m4.2xlarge"
+	K8S_VERSION  string = "1.21.9"
+	KOPS_VERSION string = "1.21.4"
+	smallEC2     string = "t2.medium"
+	mediumEC2    string = "t2.xlarge"
+	largeEC2     string = "m4.2xlarge"
 )
 
 type KopsEvent struct {
@@ -61,6 +63,8 @@ func RunKOPS(event KopsEvent) {
 		reportErr(err, "set KUBECONFIG environment variable")
 	}
 
+	kopsPath := home + "/.dispatch/bin/" + KOPS_VERSION + "/kops"
+
 	switch event.action {
 	case "create":
 		existingClusters := getClusters(event.bucket)
@@ -74,7 +78,7 @@ func RunKOPS(event KopsEvent) {
 			labels := "owner=" + event.user + ", CreatedBy=Dispatch"
 
 			kopsCMD = exec.Command(
-				"kops", "create", "cluster",
+				kopsPath, "create", "cluster",
 				"--kubernetes-version="+event.version,
 				"--state=s3://"+event.bucket,
 				"--node-count="+event.count,
@@ -102,7 +106,7 @@ Create cluster details
 
 		if clusterExists(existingClusters, event.fqdn) {
 			kopsCMD = exec.Command(
-				"kops", "delete", "cluster",
+				kopsPath, "delete", "cluster",
 				"--name="+event.fqdn,
 				"--state=s3://"+event.bucket,
 				"--yes",

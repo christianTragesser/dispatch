@@ -2,8 +2,10 @@ package dispatch
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
-	"os/exec"
+	"runtime"
 
 	"crypto/rand"
 	"crypto/rsa"
@@ -15,18 +17,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func ensureInstall(binName string) {
-	path, err := exec.LookPath(binName)
-	if err != nil {
-		reportErr(err, "find "+binName+" in system $PATH")
-	} else {
-		fmt.Printf(" . Found %s at %s\n", binName, path)
-	}
-}
-
-func ensureDirs(paths [3]string) {
+func ensureDirs(paths [4]string) {
 	for _, path := range paths {
-		err := os.Mkdir(path, os.ModePerm)
+		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
 			fmt.Printf(" . Found %s\n", path)
 		}
@@ -141,6 +134,39 @@ func ensureDispatchConfig(dispatchDir string) string {
 	return dispatchUID
 }
 
+func ensureKOPS(binDir string) {
+	kopsURL := "https://github.com/kubernetes/kops/releases/download/v" + KOPS_VERSION + "/kops-" + runtime.GOOS + "-" + runtime.GOARCH
+	kopsBin := binDir + "/kops"
+
+	_, err := os.Stat(kopsBin)
+
+	if os.IsNotExist(err) {
+		fmt.Printf(" + Downloading kOps v%s\n", KOPS_VERSION)
+		resp, err := http.Get(kopsURL)
+		if err != nil {
+			reportErr(err, "download kOps")
+		}
+		defer resp.Body.Close()
+
+		fileHandle, err := os.OpenFile(kopsBin, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+		if err != nil {
+			reportErr(err, "buffer kOps download")
+		}
+		defer fileHandle.Close()
+
+		_, err = io.Copy(fileHandle, resp.Body)
+		if err != nil {
+			reportErr(err, "save kOps binary")
+		}
+
+		os.Chmod(kopsBin, 0750)
+
+	} else {
+		fmt.Printf(" . Found kOps at %s\n", kopsBin)
+	}
+
+}
+
 func ensureWorkspace() string {
 	var dispatchUID string
 
@@ -148,15 +174,17 @@ func ensureWorkspace() string {
 
 	if homeSet {
 		dispatchDir := home + "/.dispatch"
-		workspaceDirs := [3]string{
+		workspaceDirs := [4]string{
 			dispatchDir,
 			dispatchDir + "/.ssh",
 			dispatchDir + "/.kube",
+			dispatchDir + "/bin/" + KOPS_VERSION,
 		}
 
 		ensureDirs(workspaceDirs)
 		ensureRSAKeys(workspaceDirs[1])
 		ensureKubeConfig(workspaceDirs[2])
+		ensureKOPS(workspaceDirs[3])
 		dispatchUID = ensureDispatchConfig(workspaceDirs[0])
 
 	} else {
