@@ -170,6 +170,8 @@ func Create() []string {
 
 	if eventOptions[1] == "" {
 		eventOptions[1] = "small"
+	} else {
+		eventOptions[1] = strings.ToUpper(eventOptions[1])
 	}
 
 	if eventOptions[2] == "" {
