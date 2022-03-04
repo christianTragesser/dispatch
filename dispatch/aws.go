@@ -21,7 +21,12 @@ func awsClientConfig() *aws.Config {
 		region = "us-east-1"
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	profile, profileSet := os.LookupEnv("AWS_PROFILE")
+	if !profileSet {
+		profile = "default"
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
 	if err != nil {
 		reportErr(err, "load AWS configuration")
 	}
@@ -126,12 +131,8 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 }
 
 func testAWSCreds(clientConfig aws.Config) {
-	_, accessKeySet := os.LookupEnv("AWS_ACCESS_KEY_ID")
-	if !accessKeySet {
-		fmt.Print(" (AWS creds absent from env vars, not sure this will end well....)\n")
-	}
-
 	testIAM(clientConfig)
+
 	fmt.Printf(" . Valid AWS credentials have been provided for region %s\n", clientConfig.Region)
 }
 
