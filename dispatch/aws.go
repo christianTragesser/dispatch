@@ -16,19 +16,34 @@ import (
 )
 
 func awsClientConfig() *aws.Config {
+	var cfg aws.Config
+	var err error
+
 	region, regionSet := os.LookupEnv("AWS_REGION")
 	if !regionSet {
 		region = "us-east-1"
 	}
 
-	profile, profileSet := os.LookupEnv("AWS_PROFILE")
-	if !profileSet {
-		profile = "default"
-	}
+	_, envarCredsSet := os.LookupEnv("AWS_ACCESS_KEY_ID")
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
-	if err != nil {
-		reportErr(err, "load AWS configuration")
+	if !envarCredsSet {
+		profile, profileSet := os.LookupEnv("AWS_PROFILE")
+		if profileSet {
+			cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
+
+			if err != nil {
+				reportErr(err, "to find AWS credentials")
+			}
+		} else {
+			fmt.Println(" ! Failed to find AWS credentials in env vars or credentials file")
+			os.Exit(1)
+		}
+	} else {
+		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+
+		if err != nil {
+			reportErr(err, "to find AWS credentials")
+		}
 	}
 
 	return &cfg
