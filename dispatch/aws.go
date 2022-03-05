@@ -28,13 +28,12 @@ func awsClientConfig() *aws.Config {
 
 	if !envarCredsSet {
 		profile, profileSet := os.LookupEnv("AWS_PROFILE")
-		if profileSet {
-			cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
+		if !profileSet {
+			profile = "default"
+		}
+		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
 
-			if err != nil {
-				reportErr(err, "to find AWS credentials")
-			}
-		} else {
+		if err != nil {
 			fmt.Println(" ! Failed to find AWS credentials in env vars or credentials file")
 			os.Exit(1)
 		}
