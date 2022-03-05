@@ -17,18 +17,22 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func ensureDirs(paths [4]string) {
-	for _, path := range paths {
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			fmt.Printf(" . Found %s\n", path)
-		}
+type workspace struct {
+	root, ssh, kube, bin string
+}
+
+func ensureDir(path string) {
+	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		reportErr(err, "creating dispatch workspace")
 	}
 }
 
 func ensureRSAKeys(sshDir string) {
 	keyFile := sshDir + "/kops_rsa"
 	bitSize := 4096
+
+	ensureDir(sshDir)
 
 	_, err := os.Stat(keyFile)
 
@@ -76,6 +80,8 @@ func ensureRSAKeys(sshDir string) {
 
 func ensureKubeConfig(kubeDir string) {
 	configFile := kubeDir + "/config"
+
+	ensureDir(kubeDir)
 
 	_, err := os.Stat(configFile)
 
@@ -138,6 +144,8 @@ func ensureKOPS(binDir string) {
 	kopsURL := "https://github.com/kubernetes/kops/releases/download/v" + KOPS_VERSION + "/kops-" + runtime.GOOS + "-" + runtime.GOARCH
 	kopsBin := binDir + "/kops"
 
+	ensureDir(binDir)
+
 	_, err := os.Stat(kopsBin)
 
 	if os.IsNotExist(err) {
@@ -174,18 +182,19 @@ func ensureWorkspace() string {
 
 	if homeSet {
 		dispatchDir := home + "/.dispatch"
-		workspaceDirs := [4]string{
-			dispatchDir,
-			dispatchDir + "/.ssh",
-			dispatchDir + "/.kube",
-			dispatchDir + "/bin/" + KOPS_VERSION,
+
+		sessionDirs := workspace{
+			root: dispatchDir,
+			ssh:  dispatchDir + "/.ssh",
+			kube: dispatchDir + "/.kube",
+			bin:  dispatchDir + "/bin/" + KOPS_VERSION + "/" + runtime.GOOS,
 		}
 
-		ensureDirs(workspaceDirs)
-		ensureRSAKeys(workspaceDirs[1])
-		ensureKubeConfig(workspaceDirs[2])
-		ensureKOPS(workspaceDirs[3])
-		dispatchUID = ensureDispatchConfig(workspaceDirs[0])
+		ensureDir(sessionDirs.root)
+		ensureRSAKeys(sessionDirs.ssh)
+		ensureKubeConfig(sessionDirs.kube)
+		ensureKOPS(sessionDirs.bin)
+		dispatchUID = ensureDispatchConfig(sessionDirs.root)
 
 	} else {
 		fmt.Print("$HOME environment variable not found, exiting.\n")

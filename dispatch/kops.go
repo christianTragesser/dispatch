@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	status "github.com/christiantragesser/dispatch/status"
@@ -58,12 +59,12 @@ func RunKOPS(event KopsEvent) {
 
 	home, _ := os.LookupEnv("HOME")
 
+	kopsBin := home + "/.dispatch/bin/" + KOPS_VERSION + "/" + runtime.GOOS + "/kops"
+
 	err := os.Setenv("KUBECONFIG", home+"/.dispatch/.kube/config")
 	if err != nil {
 		reportErr(err, "set KUBECONFIG environment variable")
 	}
-
-	kopsPath := home + "/.dispatch/bin/" + KOPS_VERSION + "/kops"
 
 	switch event.action {
 	case "create":
@@ -77,8 +78,10 @@ func RunKOPS(event KopsEvent) {
 			nodeSize := getNodeSize(event.size)
 			labels := "owner=" + event.user + ", CreatedBy=Dispatch"
 
+			fmt.Printf("KOPS Bin is: %s", kopsBin)
+
 			kopsCMD = exec.Command(
-				kopsPath, "create", "cluster",
+				kopsBin, "create", "cluster",
 				"--kubernetes-version="+event.version,
 				"--state=s3://"+event.bucket,
 				"--node-count="+event.count,
@@ -106,7 +109,7 @@ Create cluster details
 
 		if clusterExists(existingClusters, event.fqdn) {
 			kopsCMD = exec.Command(
-				kopsPath, "delete", "cluster",
+				kopsBin, "delete", "cluster",
 				"--name="+event.fqdn,
 				"--state=s3://"+event.bucket,
 				"--yes",
