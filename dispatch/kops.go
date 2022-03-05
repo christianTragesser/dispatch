@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	K8S_VERSION  string = "1.21.9"
+	K8S_VERSION  string = "1.21.10"
 	KOPS_VERSION string = "1.21.4"
 	smallEC2     string = "t2.medium"
 	mediumEC2    string = "t2.xlarge"
@@ -77,8 +77,6 @@ func RunKOPS(event KopsEvent) {
 			zones := getZones()
 			nodeSize := getNodeSize(event.size)
 			labels := "owner=" + event.user + ", CreatedBy=Dispatch"
-
-			fmt.Printf("KOPS Bin is: %s", kopsBin)
 
 			kopsCMD = exec.Command(
 				kopsBin, "create", "cluster",
