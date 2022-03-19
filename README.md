@@ -32,18 +32,18 @@ export AWS_REGION="us-west-2"
 ```
 
 ### Install
-Dispatch can be acquired in one of the following ways
-#### Binary (AMD64)
-* [Linux](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:linux)
-* [MacOS](https://gitlab.com/christianTragesser/dispatch/-/jobs/artifacts/master/download?job=publish:macos)  
-
-Download the golang binary and move into a directory located in your system `$PATH`
-
-#### Build Dispatch From Source
+#### Build From Source
 Clone this repository to your local `$GOPATH` location and build the binary
 ```
  $GOPATH/dispatch $ go build -o /usr/local/bin/dispatch .
 ```
+
+#### Binary (AMD64)
+A `dispatch` [binary is available](https://github.com/christianTragesser/dispatch/releases) for the following platforms: 
+* Linux
+* MacOS  
+
+Download the binary and place in a directory located in your system `$PATH`
 
 #### Container Image
 ```
