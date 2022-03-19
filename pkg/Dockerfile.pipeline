@@ -1,0 +1,5 @@
+FROM gcr.io/distroless/static as publish
+
+COPY dist/dispatch_linux_amd64/dispatch-linux-amd64 /usr/local/bin/dispatch
+
+CMD [ "dispatch" ]
