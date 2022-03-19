@@ -1,0 +1,34 @@
+project_name: dispatch
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+    goos:
+      - linux
+      - darwin
+    binary: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+checksum:
+  name_template: 'checksums.txt'
+  extra_files:
+    - glob: ./dist/{{ .ProjectName }}_darwin_amd64/*
+    - glob: ./dist/{{ .ProjectName }}_linux_amd64/*
+snapshot:
+  name_template: '{{ incpatch .Version }}-rc_{{ .ShortCommit }}'
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - 'test'
+      - 'correct'
+      - '^WIP'
+      - 'README'
+      - 'gitlab'
+release:
+  extra_files:
+    - glob: ./dist/{{ .ProjectName }}_darwin_amd64/*
+    - glob: ./dist/{{ .ProjectName }}_linux_amd64/*

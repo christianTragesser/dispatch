@@ -1,8 +1,15 @@
 variables:
   IMAGE_NAME: dispatch
-  IMAGE_FILE_PATH: $CI_PROJECT_DIR
 
-.build_rules:
+include:
+  - project: christiantragesser/gitlab-ci-templates
+    ref: master
+    file:
+      - goreleaser.yml
+      - kaniko.yml
+
+.default_branch_only:
+  rules:
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     changes:
       - go.*
@@ -10,56 +17,39 @@ variables:
       - dispatch/*
       - status/*
       - tui*/*
-      - Dockerfile
-
-include:
-  - project: christiantragesser/gitlab-ci-templates
-    ref: master
-    file:
-      - kaniko.yml
+      - pkg/Dockerfile.pipeline
 
 stages:
   - publish
+  - release
 
+publish:binary:
+  stage: publish
+  extends:
+    - .bin_publish
+    - .default_branch_only
+  artifacts:
+    paths:
+      - dist/${IMAGE_NAME}_linux_amd64/${IMAGE_NAME}-linux-amd64
+  
 publish:container:
   stage: publish
+  needs: ["publish:binary"]
   extends:
-    - .kaniko
+    - .kaniko_publish
+    - .default_branch_only
   variables:
+    DOCKERFILE_PATH: ./pkg/Dockerfile.pipeline
     DOCKER_BUILD_STAGE: publish
-  rules:
-    - !reference [.build_rules]
+  dependencies:
+    - publish:binary
 
-publish:linux:
-  stage: publish
+release:github:
+  stage: release
   extends:
-    - .kaniko
-  variables:
-    DOCKER_BUILD_STAGE: linux-binary
-    KANIKO_ADDITIONAL_ARGS: --destination registry.local/image:latest --no-push --ignore-path /dispatch-linux-amd64 --ignore-path /dispatch-linux-amd64.sha256
-  after_script:
-    - cp /dispatch-linux-amd64 $CI_PROJECT_DIR
-    - cp /dispatch-linux-amd64.sha256 $CI_PROJECT_DIR
-  artifacts:
-    paths:
-      - dispatch-linux-amd64
-      - dispatch-linux-amd64.sha256
-  rules:
-    - !reference [.build_rules]
+    - .gh_release
 
-publish:macos:
-  stage: publish
+release:container:
+  stage: release
   extends:
-    - .kaniko
-  variables:
-    DOCKER_BUILD_STAGE: macos-binary
-    KANIKO_ADDITIONAL_ARGS: --destination registry.local/image:latest --no-push --ignore-path /dispatch-darwin-amd64 --ignore-path /dispatch-darwin-amd64.sha256
-  after_script:
-    - cp /dispatch-darwin-amd64 $CI_PROJECT_DIR
-    - cp /dispatch-darwin-amd64.sha256 $CI_PROJECT_DIR
-  artifacts:
-    paths:
-      - dispatch-darwin-amd64
-      - dispatch-darwin-amd64.sha256
-  rules:
-    - !reference [.build_rules]
+    - .kaniko_release
