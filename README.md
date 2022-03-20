@@ -32,10 +32,9 @@ export AWS_REGION="us-west-2"
 ```
 
 ### Install
-#### Build From Source
-Clone this repository to your local `$GOPATH` location and build the binary
+#### Homebrew Tap
 ```
- $GOPATH/dispatch $ go build -o /usr/local/bin/dispatch .
+brew install christiantragesser/tap/dispatch
 ```
 
 #### Binary (AMD64)
