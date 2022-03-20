@@ -32,7 +32,7 @@ export AWS_REGION="us-west-2"
 ```
 
 ### Install
-#### Homebrew Tap
+#### Homebrew Tap (preferred)
 ```
 brew install christiantragesser/tap/dispatch
 ```
