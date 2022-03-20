@@ -44,7 +44,7 @@ brews:
     homepage: "https://github.com/christianTragesser/dispatch"
     description: "A CLI utility for deploying KOPS Kubernetes in AWS"
     license: "MIT"
-    install: |
-      bin.install "dispatch-{{ .Runtime.Goos }}-{{ .Runtime.Goarch }}" => "dispatch"
+    post_install: |
+      system "ln -s #{bin}/dispatch-* /usr/local/bin/dispatch"
     test: |
         system "#{bin}/dispatch version"
