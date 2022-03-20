@@ -32,3 +32,17 @@ release:
   extra_files:
     - glob: ./dist/{{ .ProjectName }}_darwin_amd64/*
     - glob: ./dist/{{ .ProjectName }}_linux_amd64/*
+brews:
+  - name: '{{ .ProjectName }}'
+    tap:
+        owner: christiantragesser
+        name: homebrew-tap
+    folder: Formula
+    commit_author:
+        name: goreleaserbot
+        email: release-bot@evoen.net
+    homepage: "https://github.com/christianTragesser/dispatch"
+    description: "A CLI utility for deploying KOPS Kubernetes in AWS"
+    license: "MIT"
+    test: |
+        system "#{bin}/dispatch version"
