@@ -23,7 +23,7 @@ func getCreationDate(bucket string, cluster string) string {
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
 
-func CLIOption(event KopsEvent) KopsEvent {
+func CLIOption(version string, event KopsEvent) KopsEvent {
 	action := os.Args[1]
 
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
@@ -38,6 +38,9 @@ func CLIOption(event KopsEvent) KopsEvent {
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	switch action {
+	case "version":
+		fmt.Printf("Dispatch version %s\n", version)
+		os.Exit(0)
 	case "create":
 		createCommand.Parse(os.Args[2:])
 
