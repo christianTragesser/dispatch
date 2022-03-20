@@ -7,6 +7,7 @@ import (
 	dispatch "github.com/christiantragesser/dispatch/dispatch"
 )
 
+var version string
 var ASCII_ART string = "\n" + `______  _____ _______  _____  _______ _______ _______ _     _
 |     \   |   |______ |_____] |_____|    |    |       |_____|
 |_____/ __|__ ______| |       |     |    |    |______ |     |   
@@ -16,7 +17,12 @@ func main() {
 	var sessionEvent dispatch.KopsEvent
 
 	if len(os.Args) > 1 {
-		dispatch.CLIOption(sessionEvent)
+		if os.Args[1] == "version" {
+			fmt.Printf("Dispatch %s\n\n", version)
+			os.Exit(0)
+		} else {
+			dispatch.CLIOption(sessionEvent)
+		}
 	}
 
 	fmt.Print(ASCII_ART)
