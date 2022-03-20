@@ -45,6 +45,6 @@ brews:
     description: "A CLI utility for deploying KOPS Kubernetes in AWS"
     license: "MIT"
     install: |
-      bin.install "{{ .ProjectName }}"
+      bin.install "dispatch-{{ .Runtime.Goos }}-{{ .Runtime.Goarch }}" => "dispatch"
     test: |
         system "#{bin}/dispatch version"
