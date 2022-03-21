@@ -45,6 +45,7 @@ brews:
     description: "A CLI utility for deploying KOPS Kubernetes in AWS"
     license: "MIT"
     post_install: |
-      system "ln -ns #{bin}/dispatch-* /usr/local/bin/dispatch"
+      system "rm -f /usr/local/bin/dispatch || true"
+      system "ln -s #{bin}/dispatch-* /usr/local/bin/dispatch"
     test: |
         system "#{bin}/dispatch version"
