@@ -23,25 +23,21 @@ func getCreationDate(bucket string, cluster string) string {
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
 
-func CLIOption(version string, event KopsEvent) KopsEvent {
+func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 	action := os.Args[1]
-
-	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
-	createSize := createCommand.String("size", "small", "cluster node size")
-	nodeCount := createCommand.String("nodes", "2", "cluster node count")
-	createVersion := createCommand.String("version", K8S_VERSION, "Kubernetes version")
-	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
-
-	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
-	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
-	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	switch action {
 	case "version":
-		fmt.Printf("Dispatch version %s\n", version)
+		fmt.Printf("Dispatch version %s\n", dispatchVersion)
 		os.Exit(0)
 	case "create":
+		createCommand := flag.NewFlagSet("create", flag.ExitOnError)
+		createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
+		createSize := createCommand.String("size", "small", "cluster node size")
+		nodeCount := createCommand.String("nodes", "2", "cluster node count")
+		createVersion := createCommand.String("version", K8S_VERSION, "Kubernetes version")
+		createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
+
 		createCommand.Parse(os.Args[2:])
 
 		event.action = action
@@ -52,6 +48,10 @@ func CLIOption(version string, event KopsEvent) KopsEvent {
 		event.verify = *createYOLO
 
 	case "delete":
+		deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
+		deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
+		deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
+
 		deleteCommand.Parse(os.Args[2:])
 
 		if *deleteFQDN == "" {
@@ -117,22 +117,20 @@ func TUIOption(event KopsEvent) KopsEvent {
 	return event
 }
 
-func EnsureDependencies() KopsEvent {
-	var kopsSession KopsEvent
-
+func EnsureDependencies(event KopsEvent) KopsEvent {
 	fmt.Print("\nEnsuring dependencies:\n")
 
-	kopsSession.user = ensureWorkspace()
+	event.user = ensureWorkspace()
 
 	clientConfig := awsClientConfig()
 
 	testAWSCreds(*clientConfig)
 
-	kopsSession.bucket = ensureS3Bucket(*clientConfig, kopsSession.user)
+	event.bucket = ensureS3Bucket(*clientConfig, event.user)
 
-	listClusters(kopsSession.bucket)
+	listClusters(event.bucket)
 
-	return kopsSession
+	return event
 }
 
 func reportErr(err error, activity string) {
