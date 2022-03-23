@@ -19,15 +19,13 @@ func main() {
 
 	if len(os.Args) > 1 {
 		sessionEvent = dispatch.CLIOption(version, sessionEvent)
+	} else {
+		sessionEvent = dispatch.TUIOption(sessionEvent)
 	}
 
 	fmt.Print(ASCII_ART)
 
-	sessionEvent = dispatch.EnsureDependencies()
-
-	if len(os.Args) == 0 {
-		sessionEvent = dispatch.TUIOption(sessionEvent)
-	}
+	sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 
 	dispatch.RunKOPS(sessionEvent)
 }
