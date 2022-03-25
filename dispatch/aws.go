@@ -28,6 +28,7 @@ func awsClientConfig() *aws.Config {
 
 	if !envarCredsSet {
 		profile, profileSet := os.LookupEnv("AWS_PROFILE")
+
 		if !profileSet {
 			profile = "default"
 		}
@@ -221,7 +222,7 @@ func listClusters(bucket string) {
 	}
 }
 
-func getObjectMetadata(bucket string, cluster string) *s3.HeadObjectOutput {
+func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, error) {
 	clientConfig := awsClientConfig()
 	s3Client := s3.NewFromConfig(*clientConfig)
 
@@ -230,10 +231,5 @@ func getObjectMetadata(bucket string, cluster string) *s3.HeadObjectOutput {
 		Key:    aws.String(cluster + "/config"),
 	}
 
-	metadata, err := s3Client.HeadObject(context.TODO(), input)
-	if err != nil {
-		metadata = &s3.HeadObjectOutput{LastModified: nil}
-	}
-
-	return metadata
+	return s3Client.HeadObject(context.TODO(), input)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
 )
@@ -13,10 +14,12 @@ type cluster struct {
 	name, date string
 }
 
-func getCreationDate(bucket string, cluster string) string {
-	metadata := getObjectMetadata(bucket, cluster)
+type MetadataFunc func(bucket string, cluster string) (*s3.HeadObjectOutput, error)
 
-	if metadata.LastModified == nil {
+func getCreationDate(bucket string, cluster string, metadataFunc MetadataFunc) string {
+	metadata, err := metadataFunc(bucket, cluster)
+
+	if err != nil {
 		return "not found"
 	}
 
@@ -94,10 +97,10 @@ func TUIOption(event KopsEvent) KopsEvent {
 
 		clusters := getClusters(event.bucket)
 
-		for i := range clusters {
+		for _, c := range clusters {
 			item := cluster{}
-			item.name = clusters[i]
-			item.date = getCreationDate(event.bucket, clusters[i])
+			item.name = c
+			item.date = getCreationDate(event.bucket, c, getObjectMetadata)
 			currentClusters = append(currentClusters, item)
 		}
 
