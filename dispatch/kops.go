@@ -20,8 +20,9 @@ const (
 )
 
 type KopsEvent struct {
-	action, bucket, count, fqdn, size, user, version string
-	verify                                           bool
+	Action                                   string
+	bucket, count, fqdn, size, user, version string
+	verified                                 bool
 }
 
 func getNodeSize(size string) string {
@@ -66,7 +67,7 @@ func RunKOPS(event KopsEvent) {
 		reportErr(err, "set KUBECONFIG environment variable")
 	}
 
-	switch event.action {
+	switch event.Action {
 	case "create":
 		existingClusters := getClusters(event.bucket)
 
@@ -122,10 +123,10 @@ Create cluster details
 		os.Exit(1)
 	}
 
-	if !event.verify {
+	if !event.verified {
 		var valid string
 
-		fmt.Printf("\n ? %s cluster %s (y/n): ", event.action, event.fqdn)
+		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.fqdn)
 		fmt.Scanf("%s", &valid)
 
 		if valid != "Y" && valid != "y" {
@@ -133,7 +134,7 @@ Create cluster details
 		}
 	}
 
-	fmt.Printf("\n\n Performing %s action for cluster %s\n", event.action, event.fqdn)
+	fmt.Printf("\n\n Performing %s action for cluster %s\n", event.Action, event.fqdn)
 
 	stdout, err := kopsCMD.StdoutPipe()
 	if err != nil {
@@ -157,7 +158,7 @@ Create cluster details
 
 	fmt.Printf("%s\n", string(data))
 
-	if event.action == "create" {
+	if event.Action == "create" {
 		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.fqdn)
 		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.fqdn)
 	}

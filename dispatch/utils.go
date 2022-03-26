@@ -32,7 +32,7 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 	switch action {
 	case "version":
 		fmt.Printf("Dispatch version %s\n", dispatchVersion)
-		os.Exit(0)
+		event.Action = "exit"
 	case "create":
 		createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 		createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
@@ -43,12 +43,12 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 
 		createCommand.Parse(os.Args[2:])
 
-		event.action = action
+		event.Action = action
 		event.fqdn = *createFQDN
 		event.size = *createSize
 		event.count = *nodeCount
 		event.version = *createVersion
-		event.verify = *createYOLO
+		event.verified = *createYOLO
 
 	case "delete":
 		deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
@@ -59,34 +59,35 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 
 		if *deleteFQDN == "" {
 			fmt.Print(" ! cluster FQDN is required\n\n")
-			os.Exit(0)
+
+			return KopsEvent{Action: "exit"}
 		}
 
-		event.action = action
+		event.Action = action
 		event.fqdn = *deleteFQDN
-		event.verify = *deleteYOLO
+		event.verified = *deleteYOLO
 
 	case "-h":
 		fmt.Printf("Dispatch options:\n dispatch create -h\n dispatch delete -h\n")
-		os.Exit(0)
+		event.Action = "exit"
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
-		fmt.Printf("\ntry:\n dispatch create -h\n\n or\n\n dispatch delete -h\n\n")
-		os.Exit(0)
+		fmt.Printf("\n dispatch create -h or dispatch delete -h\n")
+		event.Action = "exit"
 	}
 
 	return event
 }
 
-func TUIOption(event KopsEvent) KopsEvent {
+func TUIOption(event KopsEvent, TUIFunc TUICreateFunc) KopsEvent {
 	action := tuiaction.Action()
 
 	switch action {
 	case "create":
-		createInfo := tuicreate.Create()
+		createInfo := TUIFunc()
 
-		event.action = action
+		event.Action = action
 		event.fqdn = createInfo[0]
 		event.size = createInfo[1]
 		event.count = createInfo[2]
