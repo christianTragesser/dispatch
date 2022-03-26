@@ -19,12 +19,21 @@ func main() {
 
 	if len(os.Args) > 1 {
 		sessionEvent = dispatch.CLIOption(version, sessionEvent)
-		fmt.Print(ASCII_ART)
-		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
+
+		if sessionEvent.Action == "exit" {
+			os.Exit(0)
+		} else {
+			fmt.Print(ASCII_ART)
+			sessionEvent = dispatch.EnsureDependencies(sessionEvent)
+		}
 	} else {
 		fmt.Print(ASCII_ART)
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
-		sessionEvent = dispatch.TUIOption(sessionEvent)
+		sessionEvent = dispatch.TUIOption(sessionEvent, tuicreate.Create)
+
+		if sessionEvent.Action == "exit" {
+			os.Exit(0)
+		}
 	}
 
 	dispatch.RunKOPS(sessionEvent)
