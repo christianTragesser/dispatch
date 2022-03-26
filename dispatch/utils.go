@@ -6,8 +6,6 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/christiantragesser/dispatch/tuiaction"
-	"github.com/christiantragesser/dispatch/tuicreate"
 )
 
 type cluster struct {
@@ -15,6 +13,10 @@ type cluster struct {
 }
 
 type MetadataFunc func(bucket string, cluster string) (*s3.HeadObjectOutput, error)
+
+type TUIActionFunc func() string
+
+type TUICreateFunc func() []string
 
 func getCreationDate(bucket string, cluster string, metadataFunc MetadataFunc) string {
 	metadata, err := metadataFunc(bucket, cluster)
@@ -80,12 +82,12 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 	return event
 }
 
-func TUIOption(event KopsEvent, TUIFunc TUICreateFunc) KopsEvent {
-	action := tuiaction.Action()
+func TUIOption(event KopsEvent, TUIAction TUIActionFunc, TUIcreate TUICreateFunc) KopsEvent {
+	action := TUIAction()
 
 	switch action {
 	case "create":
-		createInfo := TUIFunc()
+		createInfo := TUIcreate()
 
 		event.Action = action
 		event.fqdn = createInfo[0]
@@ -107,15 +109,17 @@ func TUIOption(event KopsEvent, TUIFunc TUICreateFunc) KopsEvent {
 
 		if len(currentClusters) > 0 {
 			event.fqdn = selectCluster(currentClusters)
-			event.action = action
+			event.Action = action
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
-			os.Exit(0)
+
+			return KopsEvent{Action: "exit"}
 		}
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
-		os.Exit(1)
+
+		return KopsEvent{Action: "exit"}
 	}
 
 	return event

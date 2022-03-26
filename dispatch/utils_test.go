@@ -20,10 +20,6 @@ func mockGetObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput,
 	}
 }
 
-func mockTUICreate() []string {
-	return []string{"dispatch.k8s.local", "small", "2"}
-}
-
 func TestGetCreationDate(t *testing.T) {
 	// provide S3 bucket and dispatch cluster name
 	// retrieve date information from S3 object metadata
@@ -148,5 +144,10 @@ func ExampleCLIOptionDeleteNeed() {
 }
 
 func ExampleTUIOptionDeleteNone() {
+	TUIOption(event,
+		func() string { return "test" },
+		func() []string { return []string{} },
+	)
 
+	// Output:  ! test is not a valid Dispatch option
 }
