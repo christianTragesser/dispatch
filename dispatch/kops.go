@@ -11,20 +11,6 @@ import (
 	status "github.com/christiantragesser/dispatch/status"
 )
 
-const (
-	K8S_VERSION  string = "1.21.10"
-	KOPS_VERSION string = "1.21.4"
-	smallEC2     string = "t2.medium"
-	mediumEC2    string = "t2.xlarge"
-	largeEC2     string = "m4.2xlarge"
-)
-
-type KopsEvent struct {
-	Action                                   string
-	bucket, count, fqdn, size, user, version string
-	verified                                 bool
-}
-
 func getNodeSize(size string) string {
 	var ec2Instance string
 
@@ -69,7 +55,7 @@ func RunKOPS(event KopsEvent) {
 
 	switch event.Action {
 	case "create":
-		existingClusters := getClusters(event.bucket)
+		existingClusters := listExistingClusters(event.bucket)
 
 		if clusterExists(existingClusters, event.fqdn) {
 			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.fqdn)
@@ -104,7 +90,7 @@ Create cluster details
 		}
 
 	case "delete":
-		existingClusters := getClusters(event.bucket)
+		existingClusters := listExistingClusters(event.bucket)
 
 		if clusterExists(existingClusters, event.fqdn) {
 			kopsCMD = exec.Command(
