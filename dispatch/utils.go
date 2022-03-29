@@ -4,28 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type cluster struct {
-	name, date string
-}
-
-type MetadataFunc func(bucket string, cluster string) (*s3.HeadObjectOutput, error)
-
-type TUIActionFunc func() string
-
-type TUICreateFunc func() []string
-
-func getCreationDate(bucket string, cluster string, metadataFunc MetadataFunc) string {
-	metadata, err := metadataFunc(bucket, cluster)
-
-	if err != nil {
-		return "not found"
-	}
-
-	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
+func reportErr(err error, activity string) {
+	fmt.Printf(" ! Failed to %s\n\n", activity)
+	fmt.Print(err)
+	fmt.Print("\n")
+	os.Exit(1)
 }
 
 func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
@@ -82,34 +67,30 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 	return event
 }
 
-func TUIOption(event KopsEvent, TUIAction TUIActionFunc, TUIcreate TUICreateFunc) KopsEvent {
-	action := TUIAction()
+func TUIWorkflow(event KopsEvent) KopsEvent {
+	if event.Action == "" {
+		event = event.options()
+	}
 
-	switch action {
+	switch event.Action {
 	case "create":
-		createInfo := TUIcreate()
-
-		event.Action = action
-		event.fqdn = createInfo[0]
-		event.size = createInfo[1]
-		event.count = createInfo[2]
-		event.version = K8S_VERSION
+		event = event.create()
 
 	case "delete":
-		currentClusters := []cluster{}
+		var currentClusters []cluster
 
-		clusters := getClusters(event.bucket)
+		clusters := event.getClusters()
 
-		for _, c := range clusters {
-			item := cluster{}
-			item.name = c
-			item.date = getCreationDate(event.bucket, c, getObjectMetadata)
-			currentClusters = append(currentClusters, item)
-		}
+		if len(clusters) > 0 {
+			for _, c := range clusters {
+				item := cluster{}
+				item.name = c
+				item.date = event.getClusterCreationDate(getObjectMetadata, c)
+				currentClusters = append(currentClusters, item)
+			}
 
-		if len(currentClusters) > 0 {
-			event.fqdn = selectCluster(currentClusters)
-			event.Action = action
+			event = event.delete(currentClusters)
+
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 
@@ -117,7 +98,7 @@ func TUIOption(event KopsEvent, TUIAction TUIActionFunc, TUIcreate TUICreateFunc
 		}
 
 	default:
-		fmt.Printf(" ! %s is not a valid Dispatch option\n", action)
+		fmt.Printf(" ! %s is not a valid Dispatch option\n", event.Action)
 
 		return KopsEvent{Action: "exit"}
 	}
@@ -139,11 +120,4 @@ func EnsureDependencies(event KopsEvent) KopsEvent {
 	listClusters(event.bucket)
 
 	return event
-}
-
-func reportErr(err error, activity string) {
-	fmt.Printf(" ! Failed to %s\n\n", activity)
-	fmt.Print(err)
-	fmt.Print("\n")
-	os.Exit(1)
 }

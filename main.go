@@ -5,8 +5,6 @@ import (
 	"os"
 
 	dispatch "github.com/christiantragesser/dispatch/dispatch"
-	"github.com/christiantragesser/dispatch/tuiaction"
-	"github.com/christiantragesser/dispatch/tuicreate"
 )
 
 var ASCII_ART string = "\n" + `______  _____ _______  _____  _______ _______ _______ _     _
@@ -31,7 +29,7 @@ func main() {
 	} else {
 		fmt.Print(ASCII_ART)
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
-		sessionEvent = dispatch.TUIOption(sessionEvent, tuiaction.Action, tuicreate.Create)
+		sessionEvent = dispatch.TUIWorkflow(sessionEvent)
 
 		if sessionEvent.Action == "exit" {
 			os.Exit(0)
