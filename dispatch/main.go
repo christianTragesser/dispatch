@@ -1,7 +1,6 @@
 package dispatch
 
 import (
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
 )
@@ -14,55 +13,42 @@ const (
 	largeEC2     string = "m4.2xlarge"
 )
 
+type cluster struct {
+	name, date string
+}
+
 type KopsEvent struct {
 	Action                                   string
 	bucket, count, fqdn, size, user, version string
 	verified                                 bool
 }
 
-type cluster struct {
-	name, date string
-}
-
-type MetadataFunc func(bucket string, cluster string) (*s3.HeadObjectOutput, error)
-
 type TUIEventAPI interface {
-	create() []string
-	delete() string
-	options() string
-	getClusters() []string
-	getClusterCreationDate(md MetadataFunc, cluster string) string
+	getTUIAction() string
+	tuiCreate() []string
+	tuiDelete(cluster []cluster) string
+	getClusters(bucket string) []string
+	getClusterCreationDate(bucket string, cluster string) string
 }
 
-func (e KopsEvent) options() KopsEvent {
-	e.Action = tuiaction.Action()
-
-	return e
+func (e KopsEvent) getTUIAction() string {
+	return tuiaction.Action()
 }
 
-func (e KopsEvent) create() KopsEvent {
-	createOptions := tuicreate.Create()
-
-	e.fqdn = createOptions[0]
-	e.size = createOptions[1]
-	e.count = createOptions[2]
-	e.version = K8S_VERSION
-
-	return e
+func (e KopsEvent) tuiCreate() []string {
+	return tuicreate.Create()
 }
 
-func (e KopsEvent) delete(clusters []cluster) KopsEvent {
-	e.fqdn = selectCluster(clusters)
-
-	return e
+func (e KopsEvent) tuiDelete(clusters []cluster) string {
+	return selectCluster(clusters)
 }
 
-func (e KopsEvent) getClusters() []string {
-	return listExistingClusters(e.bucket)
+func (e KopsEvent) getClusters(bucket string) []string {
+	return listExistingClusters(bucket)
 }
 
-func (e KopsEvent) getClusterCreationDate(md MetadataFunc, cluster string) string {
-	metadata, err := md(e.bucket, cluster)
+func (e KopsEvent) getClusterCreationDate(bucket string, cluster string) string {
+	metadata, err := getObjectMetadata(bucket, cluster)
 
 	if err != nil {
 		return "not found"

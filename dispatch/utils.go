@@ -67,29 +67,34 @@ func CLIOption(dispatchVersion string, event KopsEvent) KopsEvent {
 	return event
 }
 
-func TUIWorkflow(event KopsEvent) KopsEvent {
-	if event.Action == "" {
-		event = event.options()
-	}
+func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
+	action := te.getTUIAction()
 
-	switch event.Action {
+	switch action {
 	case "create":
-		event = event.create()
+		createOptions := te.tuiCreate()
+
+		event.Action = action
+		event.fqdn = createOptions[0]
+		event.size = createOptions[1]
+		event.count = createOptions[2]
+		event.version = K8S_VERSION
 
 	case "delete":
 		var currentClusters []cluster
 
-		clusters := event.getClusters()
+		clusters := te.getClusters(event.bucket)
 
 		if len(clusters) > 0 {
 			for _, c := range clusters {
 				item := cluster{}
 				item.name = c
-				item.date = event.getClusterCreationDate(getObjectMetadata, c)
+				item.date = te.getClusterCreationDate(event.bucket, c)
 				currentClusters = append(currentClusters, item)
 			}
 
-			event = event.delete(currentClusters)
+			event.Action = action
+			event.fqdn = te.tuiDelete(currentClusters)
 
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")

@@ -28,8 +28,11 @@ func main() {
 		}
 	} else {
 		fmt.Print(ASCII_ART)
+
+		TUIAPI := dispatch.KopsEvent{}
+
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
-		sessionEvent = dispatch.TUIWorkflow(sessionEvent)
+		sessionEvent = dispatch.TUIWorkflow(TUIAPI, sessionEvent)
 
 		if sessionEvent.Action == "exit" {
 			os.Exit(0)
