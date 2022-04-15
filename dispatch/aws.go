@@ -17,6 +17,7 @@ import (
 
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
+
 	var err error
 
 	region, regionSet := os.LookupEnv("AWS_REGION")
@@ -32,11 +33,14 @@ func awsClientConfig() *aws.Config {
 		if !profileSet {
 			profile = "default"
 		}
-		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
+
+		cfg, err = config.
+			LoadDefaultConfig(
+				context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile),
+			)
 
 		if err != nil {
 			fmt.Println(" ! Failed to find AWS credentials in env vars or credentials file")
-			os.Exit(1)
 		}
 	} else {
 		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
@@ -50,9 +54,10 @@ func awsClientConfig() *aws.Config {
 }
 
 func testIAM(clientConfig aws.Config) {
+	maxCount := 500
 	iamClient := iam.NewFromConfig(clientConfig)
 
-	input := &iam.ListUsersInput{MaxItems: aws.Int32(int32(500))}
+	input := &iam.ListUsersInput{MaxItems: aws.Int32(int32(maxCount))}
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
@@ -89,7 +94,7 @@ func getZones() string {
 
 	for i := range resp.AvailabilityZones {
 		if i == 0 {
-			azs = azs + *resp.AvailabilityZones[i].ZoneName
+			azs += *resp.AvailabilityZones[i].ZoneName
 		} else {
 			azs = azs + "," + *resp.AvailabilityZones[i].ZoneName
 		}
@@ -108,7 +113,10 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	}
 
 	if clientConfig.Region != "us-east-1" {
-		locationConfig := &s3types.CreateBucketConfiguration{LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region)}
+		locationConfig := &s3types.
+			CreateBucketConfiguration{
+			LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region),
+		}
 		createSettings.CreateBucketConfiguration = locationConfig
 	}
 
@@ -153,6 +161,7 @@ func testAWSCreds(clientConfig aws.Config) {
 
 func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	var bucketExists bool
+
 	kopsBucket := user + "-dispatch-kops-state-store"
 
 	buckets := getS3Buckets(clientConfig)
@@ -160,7 +169,9 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	for i := range buckets.Buckets {
 		if *buckets.Buckets[i].Name == kopsBucket {
 			fmt.Printf(" . Using s3://%s for KOPS state\n", kopsBucket)
+
 			bucketExists = true
+
 			break
 		}
 	}
@@ -214,6 +225,7 @@ func listClusters(bucket string) {
 
 	if len(clusters) > 0 {
 		fmt.Print(" - Found existing KOPS clusters:\n")
+
 		for _, item := range clusters {
 			fmt.Printf("\t <> %s \n", item)
 		}

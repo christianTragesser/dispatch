@@ -9,8 +9,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const two = 2
+
 var option string
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+var docStyle = lipgloss.NewStyle().Margin(1, two)
 
 type item struct {
 	title, desc string
@@ -34,6 +36,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+
 		if msg.String() == "enter" {
 			option = m.list.SelectedItem().FilterValue()
 			return m, tea.Quit
@@ -45,6 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
+
 	return m, cmd
 }
 

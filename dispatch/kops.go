@@ -6,39 +6,34 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 
 	status "github.com/christiantragesser/dispatch/status"
 )
 
-func getNodeSize(size string) string {
-	var ec2Instance string
+func kopsCreateCmd(binPath string, event KopsEvent) *exec.Cmd {
+	zones := getZones()
+	labels := "owner=" + event.user + ", CreatedBy=Dispatch"
 
-	nodeSize := strings.ToUpper(size)
-
-	switch nodeSize {
-	case "SMALL", "S":
-		ec2Instance = smallEC2
-	case "MEDIUM", "M":
-		ec2Instance = mediumEC2
-	case "LARGE", "L":
-		ec2Instance = largeEC2
-	default:
-		fmt.Printf(" ! Invalid EC2 instance size: %s\n", nodeSize)
-		os.Exit(1)
+	nodeSize, err := getNodeSize(event.size)
+	if err != nil {
+		reportErr(err, "get EC2 instance size")
 	}
 
-	return ec2Instance
-}
-
-func clusterExists(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
+	return exec.Command(
+		binPath, "create", "cluster",
+		"--kubernetes-version="+event.version,
+		"--state=s3://"+event.bucket,
+		"--node-count="+event.count,
+		"--node-size="+nodeSize,
+		"--cloud-labels="+labels,
+		"--name="+event.fqdn,
+		"--zones="+zones,
+		"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
+		"--topology=private",
+		"--networking=weave",
+		"--authorization=RBAC",
+		"--yes",
+	)
 }
 
 func RunKOPS(event KopsEvent) {
@@ -46,7 +41,7 @@ func RunKOPS(event KopsEvent) {
 
 	home, _ := os.LookupEnv("HOME")
 
-	kopsBin := home + "/.dispatch/bin/" + KOPS_VERSION + "/" + runtime.GOOS + "/kops"
+	kopsBin := home + "/.dispatch/bin/" + kopsVersion + "/" + runtime.GOOS + "/kops"
 
 	err := os.Setenv("KUBECONFIG", home+"/.dispatch/.kube/config")
 	if err != nil {
@@ -54,32 +49,14 @@ func RunKOPS(event KopsEvent) {
 	}
 
 	switch event.Action {
-	case "create":
+	case createAction:
 		existingClusters := listExistingClusters(event.bucket)
 
 		if clusterExists(existingClusters, event.fqdn) {
 			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.fqdn)
 			os.Exit(1)
 		} else {
-			zones := getZones()
-			nodeSize := getNodeSize(event.size)
-			labels := "owner=" + event.user + ", CreatedBy=Dispatch"
-
-			kopsCMD = exec.Command(
-				kopsBin, "create", "cluster",
-				"--kubernetes-version="+event.version,
-				"--state=s3://"+event.bucket,
-				"--node-count="+event.count,
-				"--node-size="+nodeSize,
-				"--cloud-labels="+labels,
-				"--name="+event.fqdn,
-				"--zones="+zones,
-				"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
-				"--topology=private",
-				"--networking=weave",
-				"--authorization=RBAC",
-				"--yes",
-			)
+			kopsCMD = kopsCreateCmd(kopsBin, event)
 
 			fmt.Printf(`
 Create cluster details
@@ -89,7 +66,7 @@ Create cluster details
   - nodes: %s`+"\n", event.fqdn, event.version, event.size, event.count)
 		}
 
-	case "delete":
+	case deleteAction:
 		existingClusters := listExistingClusters(event.bucket)
 
 		if clusterExists(existingClusters, event.fqdn) {
@@ -144,7 +121,7 @@ Create cluster details
 
 	fmt.Printf("%s\n", string(data))
 
-	if event.Action == "create" {
+	if event.Action == createAction {
 		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.fqdn)
 		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.fqdn)
 	}
