@@ -188,7 +188,6 @@ func TestCLIWorkflow(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func ExampleVersionCLIWorkflow() {
@@ -225,7 +224,7 @@ func ExampleNotValidCLIWorkflow() {
 	//  dispatch create -h or dispatch delete -h
 }
 
-func ExampleCLIWorkflowDeleteNeed() {
+func ExampleCLIWorkflow() {
 	var event KopsEvent
 
 	os.Args = []string{"dispatch", "delete"}

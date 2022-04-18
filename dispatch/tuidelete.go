@@ -9,10 +9,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const two = 2
+const lipglossStyleMargin = 2
 
 var option string
-var docStyle = lipgloss.NewStyle().Margin(1, two)
+var docStyle = lipgloss.NewStyle().Margin(1, lipglossStyleMargin)
 
 type item struct {
 	title, desc string

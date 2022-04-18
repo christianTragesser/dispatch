@@ -8,7 +8,15 @@ import (
 
 const exitStatus string = "exit"
 
-func CLICreate(action string, event KopsEvent) KopsEvent {
+type TUIEventAPI interface {
+	getTUIAction() string
+	tuiCreate() []string
+	tuiDelete(cluster []cluster) string
+	getClusters(bucket string) []string
+	getClusterCreationDate(bucket string, cluster string) string
+}
+
+func CLICreate(event KopsEvent) KopsEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node size")
@@ -21,7 +29,6 @@ func CLICreate(action string, event KopsEvent) KopsEvent {
 		reportErr(err, " parse create command")
 	}
 
-	event.Action = action
 	event.fqdn = *createFQDN
 	event.size = *createSize
 	event.count = *nodeCount
@@ -31,7 +38,7 @@ func CLICreate(action string, event KopsEvent) KopsEvent {
 	return event
 }
 
-func CLIDelete(action string, event KopsEvent) KopsEvent {
+func CLIDelete(event KopsEvent) KopsEvent {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
@@ -47,7 +54,6 @@ func CLIDelete(action string, event KopsEvent) KopsEvent {
 		return KopsEvent{Action: exitStatus}
 	}
 
-	event.Action = action
 	event.fqdn = *deleteFQDN
 	event.verified = *deleteYOLO
 
@@ -63,10 +69,12 @@ func CLIWorkflow(dispatchVersion string, event KopsEvent) KopsEvent {
 
 		event.Action = exitStatus
 	case "create":
-		event = CLICreate(action, event)
+		event = CLICreate(event)
+		event.Action = action
 
 	case "delete":
-		event = CLIDelete(action, event)
+		event = CLIDelete(event)
+		event.Action = action
 
 	case "-h":
 		fmt.Printf("Dispatch options:\n dispatch create -h\n dispatch delete -h\n")
@@ -87,7 +95,7 @@ func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
 	action := te.getTUIAction()
 
 	switch action {
-	case "create":
+	case createAction:
 		createOptions := te.tuiCreate()
 
 		event.Action = action
@@ -96,7 +104,7 @@ func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
 		event.count = createOptions[2]
 		event.version = k8sVersion
 
-	case "delete":
+	case deleteAction:
 		var currentClusters []cluster
 
 		clusters := te.getClusters(event.bucket)

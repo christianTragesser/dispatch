@@ -34,7 +34,7 @@ func EnsureDependencies(event KopsEvent) KopsEvent {
 
 	event.bucket = ensureS3Bucket(*clientConfig, event.user)
 
-	listClusters(event.bucket)
+	printExistingClusters(event.bucket)
 
 	return event
 }
