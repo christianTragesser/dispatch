@@ -1,6 +1,7 @@
 package dispatch
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,34 +11,59 @@ import (
 	status "github.com/christiantragesser/dispatch/status"
 )
 
-func kopsCreateCmd(binPath string, event KopsEvent) *exec.Cmd {
-	zones := getZones()
-	labels := "owner=" + event.user + ", CreatedBy=Dispatch"
+type kopsCmdAPI interface {
+	ec2Type(sizeName string) (string, error)
+	vpcZones() string
+}
 
-	nodeSize, err := getNodeSize(event.size)
-	if err != nil {
-		reportErr(err, "get EC2 instance size")
+func kopsEventCmd(kcmd kopsCmdAPI, binPath string, event KopsEvent) (*exec.Cmd, error) {
+	var kopsCmd *exec.Cmd
+
+	var err error
+
+	switch event.Action {
+	case createAction:
+		zones := kcmd.vpcZones()
+		labels := "owner=" + event.user + ", CreatedBy=Dispatch"
+
+		ec2InstanceType, err := kcmd.ec2Type(event.size)
+		if err != nil {
+			reportErr(err, "get EC2 instance size")
+		}
+
+		kopsCmd = exec.Command(
+			binPath, "create", "cluster",
+			"--kubernetes-version="+event.version,
+			"--state=s3://"+event.bucket,
+			"--node-count="+event.count,
+			"--node-size="+ec2InstanceType,
+			"--cloud-labels="+labels,
+			"--name="+event.fqdn,
+			"--zones="+zones,
+			"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
+			"--topology=private",
+			"--networking=weave",
+			"--authorization=RBAC",
+			"--yes",
+		)
+	case deleteAction:
+		kopsCmd = exec.Command(
+			binPath, "delete", "cluster",
+			"--name="+event.fqdn,
+			"--state=s3://"+event.bucket,
+			"--yes",
+		)
+	default:
+		err = errors.New("kops event command not known")
 	}
 
-	return exec.Command(
-		binPath, "create", "cluster",
-		"--kubernetes-version="+event.version,
-		"--state=s3://"+event.bucket,
-		"--node-count="+event.count,
-		"--node-size="+nodeSize,
-		"--cloud-labels="+labels,
-		"--name="+event.fqdn,
-		"--zones="+zones,
-		"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
-		"--topology=private",
-		"--networking=weave",
-		"--authorization=RBAC",
-		"--yes",
-	)
+	return kopsCmd, err
 }
 
 func RunKOPS(event KopsEvent) {
 	var kopsCMD *exec.Cmd
+
+	kcmdAPI := KopsEvent{}
 
 	home, _ := os.LookupEnv("HOME")
 
@@ -56,7 +82,10 @@ func RunKOPS(event KopsEvent) {
 			fmt.Printf("\n ! KOPS cluster %s already exists\n\n", event.fqdn)
 			os.Exit(1)
 		} else {
-			kopsCMD = kopsCreateCmd(kopsBin, event)
+			kopsCMD, err = kopsEventCmd(kcmdAPI, kopsBin, event)
+			if err != nil {
+				reportErr(err, "generate create event command")
+			}
 
 			fmt.Printf(`
 Create cluster details
@@ -70,17 +99,14 @@ Create cluster details
 		existingClusters := listExistingClusters(event.bucket)
 
 		if clusterExists(existingClusters, event.fqdn) {
-			kopsCMD = exec.Command(
-				kopsBin, "delete", "cluster",
-				"--name="+event.fqdn,
-				"--state=s3://"+event.bucket,
-				"--yes",
-			)
+			kopsCMD, err = kopsEventCmd(kcmdAPI, kopsBin, event)
+			if err != nil {
+				reportErr(err, "generate delete event command")
+			}
 		} else {
 			fmt.Printf("\n ! Unknown KOPS cluster %s\n\n", event.fqdn)
 			os.Exit(1)
 		}
-
 	default:
 		fmt.Print(" ! Unknown KOPS event\n")
 		os.Exit(1)

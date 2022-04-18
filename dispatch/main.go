@@ -26,14 +26,6 @@ type KopsEvent struct {
 	verified                                 bool
 }
 
-type TUIEventAPI interface {
-	getTUIAction() string
-	tuiCreate() []string
-	tuiDelete(cluster []cluster) string
-	getClusters(bucket string) []string
-	getClusterCreationDate(bucket string, cluster string) string
-}
-
 func (e KopsEvent) getTUIAction() string {
 	return tuiaction.Action()
 }
@@ -57,4 +49,12 @@ func (e KopsEvent) getClusterCreationDate(bucket string, cluster string) string 
 	}
 
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
+}
+
+func (e KopsEvent) vpcZones() string {
+	return getZones()
+}
+
+func (e KopsEvent) ec2Type(sizeName string) (string, error) {
+	return getNodeSize(sizeName)
 }
