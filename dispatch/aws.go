@@ -220,7 +220,7 @@ func listExistingClusters(bucket string) []string {
 	return clusters
 }
 
-func listClusters(bucket string) {
+func printExistingClusters(bucket string) {
 	clusters := listExistingClusters(bucket)
 
 	if len(clusters) > 0 {
