@@ -190,7 +190,7 @@ func TestCLIWorkflow(t *testing.T) {
 	}
 }
 
-func ExampleVersionCLIWorkflow() {
+func ExampleCLIWorkflow_version() {
 	var event KopsEvent
 
 	os.Args[1] = "version"
@@ -200,7 +200,7 @@ func ExampleVersionCLIWorkflow() {
 	// Output: Dispatch version test-version
 }
 
-func ExampleHelpCLIWorkflow() {
+func ExampleCLIWorkflow_help() {
 	var event KopsEvent
 
 	os.Args[1] = "-h"
@@ -212,7 +212,7 @@ func ExampleHelpCLIWorkflow() {
 	//  dispatch delete -h
 }
 
-func ExampleNotValidCLIWorkflow() {
+func ExampleCLIWorkflow_notValid() {
 	var event KopsEvent
 
 	os.Args[1] = "none"
@@ -224,7 +224,7 @@ func ExampleNotValidCLIWorkflow() {
 	//  dispatch create -h or dispatch delete -h
 }
 
-func ExampleCLIWorkflow() {
+func ExampleCLIWorkflow_delete() {
 	var event KopsEvent
 
 	os.Args = []string{"dispatch", "delete"}
@@ -234,7 +234,7 @@ func ExampleCLIWorkflow() {
 	// Output:  ! cluster FQDN is required
 }
 
-func ExampleTUIWorkflowNotValid() {
+func ExampleTUIWorkflow_notValid() {
 	teAPI := mockTUIEvent{}
 	testEvent := KopsEvent{Action: "test"}
 
