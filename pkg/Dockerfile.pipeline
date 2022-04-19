@@ -7,6 +7,7 @@ COPY dispatch ./dispatch
 COPY status ./status
 COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
+COPY tuidelete ./tuidelete
 
 ## linting env ##
 FROM golangci/golangci-lint AS lint
