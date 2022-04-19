@@ -92,8 +92,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	if m.choice != "" {
+	if m.choice == "create" {
 		return quitTextStyle.Render(fmt.Sprintf("%s config:", m.choice))
+	} else if m.choice != "" {
+		return quitTextStyle.Render("")
 	}
 
 	if m.quitting {

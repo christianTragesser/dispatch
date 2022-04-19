@@ -3,6 +3,7 @@ run:
     - status
     - tuiaction
     - tuicreate
+    - tuidelete
   issues-exit-code: 1
   timeout: 3m
 
