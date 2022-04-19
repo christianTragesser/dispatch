@@ -49,7 +49,7 @@ publish:binary:
     - .default_branch_only
   artifacts:
     paths:
-      - dist/${IMAGE_NAME}_linux_amd64/${IMAGE_NAME}-linux-amd64
+      - dist/${IMAGE_NAME}_linux_amd64_v1/${IMAGE_NAME}-linux-amd64
   
 publish:container:
   stage: publish

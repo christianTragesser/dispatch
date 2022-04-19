@@ -22,6 +22,6 @@ RUN go test -v --cover $GOPATH/src/github.com/christiantragesser/dispatch/dispat
 
 ## container image ##
 FROM gcr.io/distroless/static AS publish
-COPY dist/dispatch_linux_amd64/dispatch-linux-amd64 /usr/local/bin/dispatch
+COPY dist/dispatch_linux_amd64_v1/dispatch-linux-amd64 /usr/local/bin/dispatch
 
 CMD [ "dispatch" ]
