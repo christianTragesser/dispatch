@@ -24,7 +24,7 @@ func (e mockTUIEvent) tuiCreate() []string {
 	return e.createDetails
 }
 
-func (e mockTUIEvent) tuiDelete(clusters []cluster) string {
+func (e mockTUIEvent) tuiDelete(clusters []map[string]string) string {
 	return e.fqdn
 }
 
@@ -212,6 +212,16 @@ func ExampleCLIWorkflow_help() {
 	//  dispatch delete -h
 }
 
+func ExampleCLIWorkflow_deleteHelp() {
+	var event KopsEvent
+
+	os.Args = []string{"dispatch", "delete"}
+
+	CLIWorkflow("delete-version", event)
+
+	// Output:  ! cluster FQDN is required
+}
+
 func ExampleCLIWorkflow_notValid() {
 	var event KopsEvent
 
@@ -222,16 +232,6 @@ func ExampleCLIWorkflow_notValid() {
 	// Output:  ! none is not a valid Dispatch option
 	//
 	//  dispatch create -h or dispatch delete -h
-}
-
-func ExampleCLIWorkflow_delete() {
-	var event KopsEvent
-
-	os.Args = []string{"dispatch", "delete"}
-
-	CLIWorkflow("delete-version", event)
-
-	// Output:  ! cluster FQDN is required
 }
 
 func ExampleTUIWorkflow_notValid() {

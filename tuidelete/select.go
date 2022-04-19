@@ -1,4 +1,4 @@
-package dispatch
+package tuidelete
 
 import (
 	"fmt"
@@ -56,11 +56,11 @@ func (m model) View() string {
 	return docStyle.Render(m.list.View())
 }
 
-func selectCluster(clusters []cluster) string {
+func SelectCluster(clusters []map[string]string) string {
 	items := []list.Item{}
 
-	for i := range clusters {
-		items = append(items, item{title: clusters[i].name, desc: "creation date: " + clusters[i].date})
+	for _, cluster := range clusters {
+		items = append(items, item{title: cluster["name"], desc: "creation date: " + cluster["date"]})
 	}
 
 	m := model{list: list.New(items, list.NewDefaultDelegate(), 0, 0)}

@@ -6,12 +6,10 @@ import (
 	"os"
 )
 
-const exitStatus string = "exit"
-
 type TUIEventAPI interface {
 	getTUIAction() string
 	tuiCreate() []string
-	tuiDelete(cluster []cluster) string
+	tuiDelete(cluster []map[string]string) string
 	getClusters(bucket string) []string
 	getClusterCreationDate(bucket string, cluster string) string
 }
@@ -105,20 +103,20 @@ func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
 		event.version = k8sVersion
 
 	case deleteAction:
-		var currentClusters []cluster
+		var clusterList []map[string]string
 
-		clusters := te.getClusters(event.bucket)
+		existingClusters := te.getClusters(event.bucket)
 
-		if len(clusters) > 0 {
-			for _, c := range clusters {
-				item := cluster{}
-				item.name = c
-				item.date = te.getClusterCreationDate(event.bucket, c)
-				currentClusters = append(currentClusters, item)
+		if len(existingClusters) > 0 {
+			for _, c := range existingClusters {
+				cluster := make(map[string]string)
+				cluster["name"] = c
+				cluster["date"] = te.getClusterCreationDate(event.bucket, c)
+				clusterList = append(clusterList, cluster)
 			}
 
 			event.Action = action
-			event.fqdn = te.tuiDelete(currentClusters)
+			event.fqdn = te.tuiDelete(clusterList)
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 

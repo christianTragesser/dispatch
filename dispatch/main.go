@@ -3,6 +3,7 @@ package dispatch
 import (
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
+	"github.com/christiantragesser/dispatch/tuidelete"
 )
 
 const (
@@ -14,11 +15,8 @@ const (
 	createAction string = "create"
 	deleteAction string = "delete"
 	notFound     string = "delete"
+	exitStatus   string = "exit"
 )
-
-type cluster struct {
-	name, date string
-}
 
 type KopsEvent struct {
 	Action                                   string
@@ -34,8 +32,8 @@ func (e KopsEvent) tuiCreate() []string {
 	return tuicreate.Create()
 }
 
-func (e KopsEvent) tuiDelete(clusters []cluster) string {
-	return selectCluster(clusters)
+func (e KopsEvent) tuiDelete(clusters []map[string]string) string {
+	return tuidelete.SelectCluster(clusters)
 }
 
 func (e KopsEvent) getClusters(bucket string) []string {
