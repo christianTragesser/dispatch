@@ -1,11 +1,10 @@
 run:
-  issues-exit-code: 1
-  skip-files:
-    - dispatch/workflow_test.go
   skip-dirs:
     - status
     - tuiaction
     - tuicreate
+  issues-exit-code: 1
+  timeout: 3m
 
 issues:
   exclude-rules:

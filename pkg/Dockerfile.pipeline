@@ -1,4 +1,24 @@
-FROM gcr.io/distroless/static as publish
+FROM golang:stretch AS source
+
+WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
+ADD go.mod .
+ADD go.sum .
+ADD main.go .
+COPY dispatch ./dispatch
+COPY status ./status
+COPY tuiaction ./tuiaction
+COPY tuicreate ./tuicreate
+
+FROM golangci/golangci-lint AS lint
+WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
+COPY --from=source /go/src/github.com/christiantragesser/dispatch .
+COPY .golangci.yml .
+RUN golangci-lint run
+
+FROM source AS test
+RUN go test --cover $GOPATH/src/github.com/christiantragesser/dispatch/dispatch
+
+FROM gcr.io/distroless/static AS publish
 
 COPY dist/dispatch_linux_amd64/dispatch-linux-amd64 /usr/local/bin/dispatch
 
