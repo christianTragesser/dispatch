@@ -1,5 +1,7 @@
 package dispatch
 
+// AWS SDK utilities
+
 import (
 	"context"
 	"fmt"
@@ -15,6 +17,7 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+// create and configure AWS SDK client
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
 
@@ -53,6 +56,7 @@ func awsClientConfig() *aws.Config {
 	return &cfg
 }
 
+// list account IAM users
 func testIAM(clientConfig aws.Config) {
 	maxCount := 500
 	iamClient := iam.NewFromConfig(clientConfig)
@@ -65,6 +69,7 @@ func testIAM(clientConfig aws.Config) {
 	}
 }
 
+// list account S3 buckets
 func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 	s3Client := s3.NewFromConfig(clientConfig)
 
@@ -76,6 +81,7 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 	return buckets
 }
 
+// provide list of AWS region availability zones
 func getZones() string {
 	var azs string
 
@@ -103,10 +109,11 @@ func getZones() string {
 	return azs
 }
 
+// create S3 bucket for kops cluster state
 func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	s3Client := s3.NewFromConfig(clientConfig)
 
-	// Create private KOPS bucket
+	// create private KOPS bucket
 	createSettings := &s3.CreateBucketInput{
 		Bucket: &bucketName,
 		ACL:    "private",
@@ -125,7 +132,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 		reportErr(err, "create KOPS S3 bucket")
 	}
 
-	// Set bucket encryption
+	// set bucket encryption
 	defEnc := &s3types.ServerSideEncryptionByDefault{SSEAlgorithm: s3types.ServerSideEncryptionAes256}
 	rule := s3types.ServerSideEncryptionRule{ApplyServerSideEncryptionByDefault: defEnc}
 	rules := []s3types.ServerSideEncryptionRule{rule}
@@ -140,7 +147,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 		reportErr(err, "encrypt KOPS S3 bucket")
 	}
 
-	// Enable bucket versioning
+	// enable bucket versioning
 	versionConfig := &s3types.VersioningConfiguration{Status: s3types.BucketVersioningStatusEnabled}
 	versionSettings := &s3.PutBucketVersioningInput{
 		Bucket:                  &bucketName,

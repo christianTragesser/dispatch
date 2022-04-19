@@ -18,6 +18,7 @@ func main() {
 	var sessionEvent dispatch.KopsEvent
 
 	if len(os.Args) > 1 {
+		// subcommand provided, use CLI workflow
 		sessionEvent = dispatch.CLIWorkflow(version, sessionEvent)
 
 		if sessionEvent.Action == "exit" {
@@ -27,6 +28,7 @@ func main() {
 			sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 		}
 	} else {
+		// use TUI workflow
 		fmt.Print(asciiArt)
 
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
