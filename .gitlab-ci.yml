@@ -20,8 +20,27 @@ include:
       - pkg/Dockerfile.pipeline
 
 stages:
+  - test
   - publish
   - release
+
+test:lint:
+  stage: test
+  extends:
+    - .kaniko_publish
+  variables:
+    DOCKERFILE_PATH: ./pkg/Dockerfile.pipeline
+    DOCKER_BUILD_STAGE: lint
+    KANIKO_ADDITIONAL_ARGS: --no-push
+
+test:unit:
+  stage: test
+  extends:
+    - .kaniko_publish
+  variables:
+    DOCKERFILE_PATH: ./pkg/Dockerfile.pipeline
+    DOCKER_BUILD_STAGE: test
+    KANIKO_ADDITIONAL_ARGS: --no-push
 
 publish:binary:
   stage: publish

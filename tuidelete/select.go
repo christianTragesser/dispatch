@@ -1,4 +1,4 @@
-package dispatch
+package tuidelete
 
 import (
 	"fmt"
@@ -9,8 +9,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const lipglossStyleMargin = 2
+
 var option string
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+var docStyle = lipgloss.NewStyle().Margin(1, lipglossStyleMargin)
 
 type item struct {
 	title, desc string
@@ -34,6 +36,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+
 		if msg.String() == "enter" {
 			option = m.list.SelectedItem().FilterValue()
 			return m, tea.Quit
@@ -45,6 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
+
 	return m, cmd
 }
 
@@ -52,11 +56,11 @@ func (m model) View() string {
 	return docStyle.Render(m.list.View())
 }
 
-func selectCluster(clusters []cluster) string {
+func SelectCluster(clusters []map[string]string) string {
 	items := []list.Item{}
 
-	for i := range clusters {
-		items = append(items, item{title: clusters[i].name, desc: "creation date: " + clusters[i].date})
+	for _, cluster := range clusters {
+		items = append(items, item{title: cluster["name"], desc: "creation date: " + cluster["date"]})
 	}
 
 	m := model{list: list.New(items, list.NewDefaultDelegate(), 0, 0)}

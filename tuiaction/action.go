@@ -52,7 +52,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 type model struct {
 	list     list.Model
-	items    []item
 	choice   string
 	quitting bool
 }
@@ -65,12 +64,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
+
 		return m, nil
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "esc":
 			m.quitting = true
+
 			return m, tea.Quit
 
 		case "enter":
@@ -79,22 +80,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.choice = string(i)
 				option = m.choice
 			}
+
 			return m, tea.Quit
 		}
 	}
 
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
+
 	return m, cmd
 }
 
 func (m model) View() string {
-	if m.choice != "" {
+	if m.choice == "create" {
 		return quitTextStyle.Render(fmt.Sprintf("%s config:", m.choice))
+	} else if m.choice != "" {
+		return quitTextStyle.Render("")
 	}
+
 	if m.quitting {
 		return quitTextStyle.Render("Exiting.")
 	}
+
 	return "\n" + m.list.View()
 }
 

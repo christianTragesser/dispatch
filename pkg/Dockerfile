@@ -8,6 +8,7 @@ COPY dispatch ./dispatch
 COPY status ./status
 COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
+COPY tuidelete ./tuidelete
 
 RUN go get -d -v
 
@@ -16,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' -a \
     -o /go/bin/dispatch-linux-amd64 .
 
-FROM gcr.io/distroless/static as publish
+FROM gcr.io/distroless/static AS publish
 COPY --from=linux-build /go/bin/dispatch-linux-amd64 /usr/local/bin/dispatch
 
 CMD [ "dispatch" ]

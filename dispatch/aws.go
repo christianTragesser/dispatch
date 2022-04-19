@@ -1,5 +1,7 @@
 package dispatch
 
+// AWS SDK utilities
+
 import (
 	"context"
 	"fmt"
@@ -15,8 +17,10 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+// create and configure AWS SDK client
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
+
 	var err error
 
 	region, regionSet := os.LookupEnv("AWS_REGION")
@@ -28,14 +32,18 @@ func awsClientConfig() *aws.Config {
 
 	if !envarCredsSet {
 		profile, profileSet := os.LookupEnv("AWS_PROFILE")
+
 		if !profileSet {
 			profile = "default"
 		}
-		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile))
+
+		cfg, err = config.
+			LoadDefaultConfig(
+				context.TODO(), config.WithRegion(region), config.WithSharedConfigProfile(profile),
+			)
 
 		if err != nil {
 			fmt.Println(" ! Failed to find AWS credentials in env vars or credentials file")
-			os.Exit(1)
 		}
 	} else {
 		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
@@ -48,10 +56,12 @@ func awsClientConfig() *aws.Config {
 	return &cfg
 }
 
+// list account IAM users
 func testIAM(clientConfig aws.Config) {
+	maxCount := 500
 	iamClient := iam.NewFromConfig(clientConfig)
 
-	input := &iam.ListUsersInput{MaxItems: aws.Int32(int32(500))}
+	input := &iam.ListUsersInput{MaxItems: aws.Int32(int32(maxCount))}
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
@@ -59,6 +69,7 @@ func testIAM(clientConfig aws.Config) {
 	}
 }
 
+// list account S3 buckets
 func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 	s3Client := s3.NewFromConfig(clientConfig)
 
@@ -70,6 +81,7 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 	return buckets
 }
 
+// provide list of AWS region availability zones
 func getZones() string {
 	var azs string
 
@@ -88,7 +100,7 @@ func getZones() string {
 
 	for i := range resp.AvailabilityZones {
 		if i == 0 {
-			azs = azs + *resp.AvailabilityZones[i].ZoneName
+			azs += *resp.AvailabilityZones[i].ZoneName
 		} else {
 			azs = azs + "," + *resp.AvailabilityZones[i].ZoneName
 		}
@@ -97,17 +109,21 @@ func getZones() string {
 	return azs
 }
 
+// create S3 bucket for kops cluster state
 func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	s3Client := s3.NewFromConfig(clientConfig)
 
-	// Create private KOPS bucket
+	// create private KOPS bucket
 	createSettings := &s3.CreateBucketInput{
 		Bucket: &bucketName,
 		ACL:    "private",
 	}
 
 	if clientConfig.Region != "us-east-1" {
-		locationConfig := &s3types.CreateBucketConfiguration{LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region)}
+		locationConfig := &s3types.
+			CreateBucketConfiguration{
+			LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region),
+		}
 		createSettings.CreateBucketConfiguration = locationConfig
 	}
 
@@ -116,7 +132,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 		reportErr(err, "create KOPS S3 bucket")
 	}
 
-	// Set bucket encryption
+	// set bucket encryption
 	defEnc := &s3types.ServerSideEncryptionByDefault{SSEAlgorithm: s3types.ServerSideEncryptionAes256}
 	rule := s3types.ServerSideEncryptionRule{ApplyServerSideEncryptionByDefault: defEnc}
 	rules := []s3types.ServerSideEncryptionRule{rule}
@@ -131,7 +147,7 @@ func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 		reportErr(err, "encrypt KOPS S3 bucket")
 	}
 
-	// Enable bucket versioning
+	// enable bucket versioning
 	versionConfig := &s3types.VersioningConfiguration{Status: s3types.BucketVersioningStatusEnabled}
 	versionSettings := &s3.PutBucketVersioningInput{
 		Bucket:                  &bucketName,
@@ -152,6 +168,7 @@ func testAWSCreds(clientConfig aws.Config) {
 
 func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	var bucketExists bool
+
 	kopsBucket := user + "-dispatch-kops-state-store"
 
 	buckets := getS3Buckets(clientConfig)
@@ -159,7 +176,9 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	for i := range buckets.Buckets {
 		if *buckets.Buckets[i].Name == kopsBucket {
 			fmt.Printf(" . Using s3://%s for KOPS state\n", kopsBucket)
+
 			bucketExists = true
+
 			break
 		}
 	}
@@ -182,7 +201,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	return kopsBucket
 }
 
-func getClusters(bucket string) []string {
+func listExistingClusters(bucket string) []string {
 	var clusters []string
 
 	clientConfig := awsClientConfig()
@@ -208,11 +227,12 @@ func getClusters(bucket string) []string {
 	return clusters
 }
 
-func listClusters(bucket string) {
-	clusters := getClusters(bucket)
+func printExistingClusters(bucket string) {
+	clusters := listExistingClusters(bucket)
 
 	if len(clusters) > 0 {
 		fmt.Print(" - Found existing KOPS clusters:\n")
+
 		for _, item := range clusters {
 			fmt.Printf("\t <> %s \n", item)
 		}
@@ -221,7 +241,7 @@ func listClusters(bucket string) {
 	}
 }
 
-func getObjectMetadata(bucket string, cluster string) *s3.HeadObjectOutput {
+func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, error) {
 	clientConfig := awsClientConfig()
 	s3Client := s3.NewFromConfig(*clientConfig)
 
@@ -230,10 +250,5 @@ func getObjectMetadata(bucket string, cluster string) *s3.HeadObjectOutput {
 		Key:    aws.String(cluster + "/config"),
 	}
 
-	metadata, err := s3Client.HeadObject(context.TODO(), input)
-	if err != nil {
-		metadata = &s3.HeadObjectOutput{LastModified: nil}
-	}
-
-	return metadata
+	return s3Client.HeadObject(context.TODO(), input)
 }

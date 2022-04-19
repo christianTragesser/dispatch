@@ -1,0 +1,56 @@
+run:
+  skip-dirs:
+    - status
+    - tuiaction
+    - tuicreate
+    - tuidelete
+  issues-exit-code: 1
+  timeout: 3m
+
+issues:
+  exclude-rules:
+    - linters:
+      - gosec
+      text: "Potential HTTP request made with variable url"
+    - linters:
+      - gosec
+      text: "Subprocess launched with a potential tainted input or cmd arguments"
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - gomnd
+    - gocyclo
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nolintlint
+    - nakedret
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - varcheck
+    - whitespace
+    - wsl
