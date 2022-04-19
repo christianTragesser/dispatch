@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	k8sVersion   string = "1.21.10"
-	kopsVersion  string = "1.21.4"
+	k8sVersion   string = "1.21.11"
+	kopsVersion  string = "1.21.5"
 	smallEC2     string = "t2.medium"
 	mediumEC2    string = "t2.xlarge"
 	largeEC2     string = "m4.2xlarge"
 	createAction string = "create"
 	deleteAction string = "delete"
-	notFound     string = "delete"
+	notFound     string = "not found"
 	exitStatus   string = "exit"
 )
 
