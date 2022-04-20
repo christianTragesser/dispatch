@@ -9,9 +9,7 @@ import (
 func TestGetCreationDate(t *testing.T) {
 	// provide S3 bucket and dispatch cluster name
 	// retrieve date information from S3 object metadata
-	t.Parallel()
 	t.Run("Retrieve cluster creation date", func(t *testing.T) {
-		t.Parallel()
 		// report cluster age when metadata exists
 		t.Run("Cluster metadata exists", func(t *testing.T) {
 			now := time.Now()
@@ -37,8 +35,6 @@ func TestGetCreationDate(t *testing.T) {
 }
 
 func TestGetNodeSize(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		err            error
 		event          mockKopsEvent
@@ -69,7 +65,6 @@ func TestGetNodeSize(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			nodeSize, _ := getNodeSize(test.event.size)
 
 			if nodeSize != test.expectedReturn {
@@ -80,8 +75,6 @@ func TestGetNodeSize(t *testing.T) {
 }
 
 func TestClusterExists(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		list           []string
 		event          string
@@ -104,7 +97,6 @@ func TestClusterExists(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			cluster := clusterExists(test.list, test.event)
 
 			if cluster != test.expectedReturn {

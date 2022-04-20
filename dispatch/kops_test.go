@@ -36,8 +36,6 @@ func (e mockCmdEvent) vpcZones() string {
 }
 
 func TestKopsEventCmd(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		expectedReturn *exec.Cmd
 		name           string
@@ -51,7 +49,7 @@ func TestKopsEventCmd(t *testing.T) {
 					Action:  "create",
 					user:    "test",
 					size:    "small",
-					version: "1.21.10",
+					version: "1.23.5",
 					bucket:  "test-bucket",
 					count:   "2",
 					fqdn:    "dispatch.k8s.local",
@@ -59,16 +57,17 @@ func TestKopsEventCmd(t *testing.T) {
 			},
 			expectedReturn: exec.Command(
 				"/test/dir/kops", "create", "cluster",
-				"--kubernetes-version=1.21.10",
+				"--name=dispatch.k8s.local",
+				"--kubernetes-version="+k8sVersion,
+				"--cloud=aws",
+				"--cloud-labels=owner=test, CreatedBy=Dispatch",
 				"--state=s3://test-bucket",
 				"--node-count=2",
 				"--node-size=t2.medium",
-				"--cloud-labels=owner=test, CreatedBy=Dispatch",
-				"--name=dispatch.k8s.local",
 				"--zones=us-test-1,us-test-2",
 				"--ssh-public-key=~/.dispatch/.ssh/kops_rsa.pub",
 				"--topology=private",
-				"--networking=weave",
+				"--networking=calico",
 				"--authorization=RBAC",
 				"--yes",
 			),
@@ -94,7 +93,6 @@ func TestKopsEventCmd(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			cmdAPI := mockCmdEvent{}
 			testEvent, _ := kopsEventCmd(cmdAPI, test.event.binPath, test.event.sample)
 
