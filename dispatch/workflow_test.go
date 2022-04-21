@@ -41,8 +41,6 @@ func (e mockTUIEvent) getClusterCreationDate(bucket string, cluster string) stri
 }
 
 func TestTUIWorkflow(t *testing.T) {
-	t.Parallel()
-
 	var event KopsEvent
 
 	tests := []struct {
@@ -61,7 +59,7 @@ func TestTUIWorkflow(t *testing.T) {
 				fqdn:     "dispatch.k8s.local",
 				size:     "small",
 				count:    "2",
-				version:  "1.21.10",
+				version:  k8sVersion,
 				verified: false,
 			},
 		},
@@ -76,7 +74,7 @@ func TestTUIWorkflow(t *testing.T) {
 				fqdn:     "testy.cluster.io",
 				size:     "large",
 				count:    "20",
-				version:  "1.21.10",
+				version:  k8sVersion,
 				verified: false,
 			},
 		},
@@ -110,12 +108,11 @@ func TestTUIWorkflow(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			teAPI := test.event
 			testEvent := TUIWorkflow(teAPI, event)
 
 			if testEvent != test.expectedReturn {
-				t.Errorf("TUIOption unit test failure '%s'\n got: '%v'\n want: '%v'", test.name, testEvent, test.expectedReturn)
+				t.Errorf("TUIWorkflow unit test failure '%s'\n got: '%v'\n want: '%v'", test.name, testEvent, test.expectedReturn)
 			}
 		})
 	}
@@ -124,8 +121,6 @@ func TestTUIWorkflow(t *testing.T) {
 func TestCLIWorkflow(t *testing.T) {
 	// provide dispatch subcommand of 'create' or 'delete'
 	// return kops event containing subcommand flag values
-	t.Parallel()
-
 	var event KopsEvent
 
 	tests := []struct {
@@ -141,7 +136,7 @@ func TestCLIWorkflow(t *testing.T) {
 				fqdn:     "dispatch.k8s.local",
 				size:     "small",
 				count:    "2",
-				version:  "1.21.10",
+				version:  k8sVersion,
 				verified: false,
 			},
 		},

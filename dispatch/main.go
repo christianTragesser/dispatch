@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	k8sVersion   string = "1.21.11"
-	kopsVersion  string = "1.21.5"
+	k8sVersion   string = "1.23.5"
+	kopsVersion  string = "1.23.1"
 	smallEC2     string = "t2.medium"
 	mediumEC2    string = "t2.xlarge"
 	largeEC2     string = "m4.2xlarge"
