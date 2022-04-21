@@ -22,7 +22,8 @@ const privMode int = 0600
 const pubMode int = 0644
 
 type workspace struct {
-	root, ssh, kube, bin string
+	root, ssh, kube   string
+	binPath, kopsPath string
 }
 
 func ensureDir(path string) {
@@ -145,12 +146,35 @@ func ensureDispatchConfig(dispatchDir string) string {
 	return dispatchUID
 }
 
-func ensureKOPS(binDir string) {
+func removePreviousKopsBins(binPath string) {
+	const preferredVersions = 1
+
+	installedVersions, err := os.ReadDir(binPath)
+	if err != nil {
+		reportErr(err, "list kOps binary directory")
+	}
+
+	if len(installedVersions) > preferredVersions {
+		fmt.Println(" (upgrading kOps binary)")
+
+		for _, v := range installedVersions {
+			if v.Name() != kopsVersion {
+				err := os.RemoveAll(binPath + v.Name())
+				if err != nil {
+					reportErr(err, "delete previous kOps binary")
+				}
+			}
+		}
+	}
+}
+
+func ensureKOPS(workDir workspace) {
 	kopsDLPath := "https://github.com/kubernetes/kops/releases/download/v"
 	kopsURL := kopsDLPath + kopsVersion + "/kops-" + runtime.GOOS + "-" + runtime.GOARCH
-	kopsBin := binDir + "/kops"
+	kopsBin := workDir.kopsPath + "/kops"
 
-	ensureDir(binDir)
+	ensureDir(workDir.kopsPath)
+	removePreviousKopsBins(workDir.binPath)
 
 	_, err := os.Stat(kopsBin)
 
@@ -193,16 +217,17 @@ func ensureWorkspace() string {
 		dispatchDir := home + "/.dispatch"
 
 		sessionDirs := workspace{
-			root: dispatchDir,
-			ssh:  dispatchDir + "/.ssh",
-			kube: dispatchDir + "/.kube",
-			bin:  dispatchDir + "/bin/" + kopsVersion + "/" + runtime.GOOS,
+			root:     dispatchDir,
+			ssh:      dispatchDir + "/.ssh",
+			kube:     dispatchDir + "/.kube",
+			binPath:  dispatchDir + "/bin/",
+			kopsPath: dispatchDir + "/bin/" + kopsVersion + "/" + runtime.GOOS,
 		}
 
 		ensureDir(sessionDirs.root)
 		ensureRSAKeys(sessionDirs.ssh)
 		ensureKubeConfig(sessionDirs.kube)
-		ensureKOPS(sessionDirs.bin)
+		ensureKOPS(sessionDirs)
 		dispatchUID = ensureDispatchConfig(sessionDirs.root)
 	} else {
 		fmt.Print("$HOME environment variable not found, exiting.\n")
