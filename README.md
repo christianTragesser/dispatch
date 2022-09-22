@@ -45,9 +45,7 @@ A `dispatch` [binary is available](https://github.com/christianTragesser/dispatc
 Download the binary and place in a directory located in your system `$PATH`
 
 #### Container Image
-```
-docker pull registry.gitlab.com/christiantragesser/dispatch
-```
+[christiantragesser/dispatch](https://hub.docker.com/repository/docker/christiantragesser/dispatch)
 
 ### Use
 Run `dispatch` to start a session (preferred)
@@ -57,8 +55,7 @@ $ dispatch
 
 With Docker using the AWS credentials file
 ```
-docker run --rm -it -v $HOME:/root \
-       registry.gitlab.com/christiantragesser/dispatch
+docker run --rm -it -v $HOME:/root christiantragesser/dispatch
 ```
 
 With Docker using AWS environment variables
@@ -68,7 +65,7 @@ docker run --rm -it \
        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
        -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
        -v $HOME:/root \
-       registry.gitlab.com/christiantragesser/dispatch
+       christiantragesser/dispatch
 ```
 
 Your home directory must be mounted to the container's `/root` directory when using the container image.
@@ -108,8 +105,7 @@ $ dispatch delete -name my-cluster.k8s.local
 
 #### Docker CLI Arguments
 ```
-docker run --rm -it -v $HOME:/root \
-       registry.gitlab.com/christiantragesser/dispatch \
+docker run --rm -it -v $HOME:/root christiantragesser/dispatch \
        dispatch create -name my-cluster.k8s.local -nodes 10 -size large
 ```
 
