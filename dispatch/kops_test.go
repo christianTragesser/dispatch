@@ -49,7 +49,7 @@ func TestKopsEventCmd(t *testing.T) {
 					Action:  "create",
 					user:    "test",
 					size:    "small",
-					version: "1.23.5",
+					version: k8sVersion,
 					bucket:  "test-bucket",
 					count:   "2",
 					fqdn:    "dispatch.k8s.local",
