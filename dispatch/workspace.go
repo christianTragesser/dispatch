@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"runtime"
@@ -70,11 +69,11 @@ func ensureRSAKeys(sshDir string) {
 		pubKeyBytes := ssh.MarshalAuthorizedKey(pubRSAKey)
 
 		// Write RSA key pair to disk
-		if err := ioutil.WriteFile(keyFile, keyPEM, fs.FileMode(privMode)); err != nil {
+		if err := os.WriteFile(keyFile, keyPEM, fs.FileMode(privMode)); err != nil {
 			reportErr(err, "save private key")
 		}
 
-		if err := ioutil.WriteFile(keyFile+".pub", pubKeyBytes, fs.FileMode(pubMode)); err != nil {
+		if err := os.WriteFile(keyFile+".pub", pubKeyBytes, fs.FileMode(pubMode)); err != nil {
 			reportErr(err, "save public key")
 		}
 	} else {
@@ -122,12 +121,12 @@ func ensureDispatchConfig(dispatchDir string) string {
 			reportErr(err, "set UID")
 		}
 
-		writeErr := ioutil.WriteFile(configFile, configData, fs.FileMode(pubMode))
+		writeErr := os.WriteFile(configFile, configData, fs.FileMode(pubMode))
 		if writeErr != nil {
 			reportErr(writeErr, "write Dispatch config file")
 		}
 	} else {
-		configData, readErr := ioutil.ReadFile(configFile)
+		configData, readErr := os.ReadFile(configFile)
 		if readErr != nil {
 			reportErr(readErr, "read Dispatch config file")
 		}

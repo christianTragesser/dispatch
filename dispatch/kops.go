@@ -3,7 +3,7 @@ package dispatch
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -137,7 +137,7 @@ Create cluster details
 
 	status.Bar()
 
-	data, err := ioutil.ReadAll(stdout)
+	data, err := io.ReadAll(stdout)
 	if err != nil {
 		reportErr(err, "read KOPS stdout")
 	}
