@@ -154,7 +154,7 @@ func removePreviousKopsBins(binPath string) {
 	}
 
 	if len(installedVersions) > preferredVersions {
-		fmt.Println(" (upgrading kOps binary)")
+		fmt.Println(" ^ kOps version update required")
 
 		for _, v := range installedVersions {
 			if v.Name() != kopsVersion {
