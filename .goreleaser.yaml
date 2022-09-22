@@ -27,7 +27,7 @@ changelog:
       - 'correct'
       - '^WIP'
       - 'README'
-      - 'gitlab'
+      - 'github'
 release:
   extra_files:
     - glob: ./dist/{{ .ProjectName }}_darwin_amd64/*
@@ -42,7 +42,7 @@ brews:
         name: goreleaserbot
         email: release-bot@evoen.net
     homepage: "https://github.com/christianTragesser/dispatch"
-    description: "A CLI utility for deploying KOPS Kubernetes in AWS"
+    description: "A CLI utility for deploying kOps Kubernetes in AWS"
     license: "MIT"
     post_install: |
       system "rm -f /usr/local/bin/dispatch || true"
