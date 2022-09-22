@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
 // create and configure AWS SDK client
@@ -109,6 +110,21 @@ func getZones() string {
 	return azs
 }
 
+func getAccountNumber() string {
+	clientConfig := awsClientConfig()
+
+	input := &sts.GetCallerIdentityInput{}
+
+	stsClient := sts.NewFromConfig(*clientConfig)
+
+	response, err := stsClient.GetCallerIdentity(context.TODO(), input)
+	if err != nil {
+		reportErr(err, "get caller identity")
+	}
+
+	return *response.Account
+}
+
 // create S3 bucket for kops cluster state
 func createKOPSBucket(clientConfig aws.Config, bucketName string) {
 	s3Client := s3.NewFromConfig(clientConfig)
@@ -169,7 +185,9 @@ func testAWSCreds(clientConfig aws.Config) {
 func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	var bucketExists bool
 
-	kopsBucket := user + "-dispatch-kops-state-store"
+	accountNumber := getAccountNumber()
+
+	kopsBucket := user + "-dispatch-kops-state-store-" + accountNumber
 
 	buckets := getS3Buckets(clientConfig)
 
