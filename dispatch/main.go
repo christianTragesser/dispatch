@@ -20,8 +20,8 @@ const (
 
 type KopsEvent struct {
 	Action                                   string
-	bucket, count, fqdn, size, user, version string
-	verified                                 bool
+	Bucket, Count, FQDN, Size, User, Version string
+	Verified                                 bool
 }
 
 func (e KopsEvent) getTUIAction() string {

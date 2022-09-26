@@ -10,16 +10,16 @@ type TUIEventAPI interface {
 	getTUIAction() string
 	tuiCreate() []string
 	tuiDelete(cluster []map[string]string) string
-	getClusters(bucket string) []string
-	getClusterCreationDate(bucket string, cluster string) string
+	getClusters(Bucket string) []string
+	getClusterCreationDate(Bucket string, cluster string) string
 }
 
 func CLICreate(event KopsEvent) KopsEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
-	createSize := createCommand.String("size", "small", "cluster node size")
-	nodeCount := createCommand.String("nodes", "2", "cluster node count")
-	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
+	createFQDN := createCommand.String("FQDN", "dispatch.k8s.local", "Cluster FQDN")
+	createSize := createCommand.String("Size", "small", "cluster node Size")
+	nodeCount := createCommand.String("nodes", "2", "cluster node Count")
+	createVersion := createCommand.String("Version", k8sVersion, "Kubernetes Version")
 	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
 
 	err := createCommand.Parse(os.Args[2:])
@@ -27,18 +27,18 @@ func CLICreate(event KopsEvent) KopsEvent {
 		reportErr(err, " parse create command")
 	}
 
-	event.fqdn = *createFQDN
-	event.size = *createSize
-	event.count = *nodeCount
-	event.version = *createVersion
-	event.verified = *createYOLO
+	event.FQDN = *createFQDN
+	event.Size = *createSize
+	event.Count = *nodeCount
+	event.Version = *createVersion
+	event.Verified = *createYOLO
 
 	return event
 }
 
 func CLIDelete(event KopsEvent) KopsEvent {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
-	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
+	deleteFQDN := deleteCommand.String("FQDN", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	err := deleteCommand.Parse(os.Args[2:])
@@ -52,8 +52,8 @@ func CLIDelete(event KopsEvent) KopsEvent {
 		return KopsEvent{Action: exitStatus}
 	}
 
-	event.fqdn = *deleteFQDN
-	event.verified = *deleteYOLO
+	event.FQDN = *deleteFQDN
+	event.Verified = *deleteYOLO
 
 	return event
 }
@@ -62,8 +62,8 @@ func CLIWorkflow(dispatchVersion string, event KopsEvent) KopsEvent {
 	action := os.Args[1]
 
 	switch action {
-	case "version":
-		fmt.Printf("Dispatch version %s\n", dispatchVersion)
+	case "Version":
+		fmt.Printf("Dispatch Version %s\n", dispatchVersion)
 
 		event.Action = exitStatus
 	case "create":
@@ -97,26 +97,26 @@ func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
 		createOptions := te.tuiCreate()
 
 		event.Action = action
-		event.fqdn = createOptions[0]
-		event.size = createOptions[1]
-		event.count = createOptions[2]
-		event.version = k8sVersion
+		event.FQDN = createOptions[0]
+		event.Size = createOptions[1]
+		event.Count = createOptions[2]
+		event.Version = k8sVersion
 
 	case deleteAction:
 		var clusterList []map[string]string
 
-		existingClusters := te.getClusters(event.bucket)
+		existingClusters := te.getClusters(event.Bucket)
 
 		if len(existingClusters) > 0 {
 			for _, c := range existingClusters {
 				cluster := make(map[string]string)
 				cluster["name"] = c
-				cluster["date"] = te.getClusterCreationDate(event.bucket, c)
+				cluster["date"] = te.getClusterCreationDate(event.Bucket, c)
 				clusterList = append(clusterList, cluster)
 			}
 
 			event.Action = action
-			event.fqdn = te.tuiDelete(clusterList)
+			event.FQDN = te.tuiDelete(clusterList)
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 

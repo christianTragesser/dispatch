@@ -43,29 +43,29 @@ func TestGetNodeSize(t *testing.T) {
 	}{
 		{
 			name:           "Get 's' EC2 type",
-			event:          mockKopsEvent{size: "s"},
+			event:          mockKopsEvent{Size: "s"},
 			expectedReturn: smallEC2,
 		},
 		{
 			name:           "Get 'medium' EC2 type",
-			event:          mockKopsEvent{size: "medium"},
+			event:          mockKopsEvent{Size: "medium"},
 			expectedReturn: mediumEC2,
 		},
 		{
 			name:           "Get 'Large' EC2 type",
-			event:          mockKopsEvent{size: "Large"},
+			event:          mockKopsEvent{Size: "Large"},
 			expectedReturn: largeEC2,
 		},
 		{
 			name:           "Get invalid EC2 type",
-			event:          mockKopsEvent{size: "test"},
+			event:          mockKopsEvent{Size: "test"},
 			expectedReturn: "",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			nodeSize, _ := getNodeSize(test.event.size)
+			nodeSize, _ := getNodeSize(test.event.Size)
 
 			if nodeSize != test.expectedReturn {
 				t.Errorf("getNodeSize unit test failure\n got: '%v', want: '%v'", nodeSize, test.expectedReturn)

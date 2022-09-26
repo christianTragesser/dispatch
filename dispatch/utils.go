@@ -26,15 +26,15 @@ func clusterExists(s []string, str string) bool {
 func EnsureDependencies(event KopsEvent) KopsEvent {
 	fmt.Print("\nEnsuring dependencies:\n")
 
-	event.user = ensureWorkspace()
+	event.User = ensureWorkspace()
 
 	clientConfig := awsClientConfig()
 
 	testAWSCreds(*clientConfig)
 
-	event.bucket = ensureS3Bucket(*clientConfig, event.user)
+	event.Bucket = ensureS3Bucket(*clientConfig, event.User)
 
-	printExistingClusters(event.bucket)
+	printExistingClusters(event.Bucket)
 
 	return event
 }

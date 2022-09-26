@@ -6,11 +6,11 @@ import (
 )
 
 type mockKopsEvent struct {
-	size string
+	Size string
 }
 
 type mockTUIEvent struct {
-	action, fqdn, datestamp string
+	action, FQDN, datestamp string
 	createDetails           []string
 	clusters                []string
 	err                     error
@@ -25,7 +25,7 @@ func (e mockTUIEvent) tuiCreate() []string {
 }
 
 func (e mockTUIEvent) tuiDelete(clusters []map[string]string) string {
-	return e.fqdn
+	return e.FQDN
 }
 
 func (e mockTUIEvent) getClusters(bucket string) []string {
@@ -56,11 +56,11 @@ func TestTUIWorkflow(t *testing.T) {
 			},
 			expectedReturn: KopsEvent{
 				Action:   "create",
-				fqdn:     "dispatch.k8s.local",
-				size:     "small",
-				count:    "2",
-				version:  k8sVersion,
-				verified: false,
+				FQDN:     "dispatch.k8s.local",
+				Size:     "small",
+				Count:    "2",
+				Version:  k8sVersion,
+				Verified: false,
 			},
 		},
 		{
@@ -71,37 +71,37 @@ func TestTUIWorkflow(t *testing.T) {
 			},
 			expectedReturn: KopsEvent{
 				Action:   "create",
-				fqdn:     "testy.cluster.io",
-				size:     "large",
-				count:    "20",
-				version:  k8sVersion,
-				verified: false,
+				FQDN:     "testy.cluster.io",
+				Size:     "large",
+				Count:    "20",
+				Version:  k8sVersion,
+				Verified: false,
 			},
 		},
 		{
 			name: "delete defaults",
 			event: mockTUIEvent{
 				action:   "delete",
-				fqdn:     "dispatch.k8s.local",
+				FQDN:     "dispatch.k8s.local",
 				clusters: []string{"dispatch.k8s.local"},
 			},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
-				fqdn:     "dispatch.k8s.local",
-				verified: false,
+				FQDN:     "dispatch.k8s.local",
+				Verified: false,
 			},
 		},
 		{
 			name: "delete testy.cluster.io",
 			event: mockTUIEvent{
 				action:   "delete",
-				fqdn:     "testy.cluster.io",
+				FQDN:     "testy.cluster.io",
 				clusters: []string{"dispatch.k8s.local", "testy.cluster.io", "dont.delete.io"},
 			},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
-				fqdn:     "testy.cluster.io",
-				verified: false,
+				FQDN:     "testy.cluster.io",
+				Verified: false,
 			},
 		},
 	}
@@ -133,41 +133,41 @@ func TestCLIWorkflow(t *testing.T) {
 			osargs: []string{"dispatch", "create"},
 			expectedReturn: KopsEvent{
 				Action:   "create",
-				fqdn:     "dispatch.k8s.local",
-				size:     "small",
-				count:    "2",
-				version:  k8sVersion,
-				verified: false,
+				FQDN:     "dispatch.k8s.local",
+				Size:     "small",
+				Count:    "2",
+				Version:  k8sVersion,
+				Verified: false,
 			},
 		},
 		{
 			name:   "create k8s v1.20.8 large testy.cluster.io yolo",
-			osargs: []string{"dispatch", "create", "-fqdn", "testy.cluster.io", "-size", "large", "-nodes", "20", "-version", "1.20.8", "-yolo", "true"},
+			osargs: []string{"dispatch", "create", "-FQDN", "testy.cluster.io", "-Size", "large", "-nodes", "20", "-Version", "1.20.8", "-yolo", "true"},
 			expectedReturn: KopsEvent{
 				Action:   "create",
-				fqdn:     "testy.cluster.io",
-				size:     "large",
-				count:    "20",
-				version:  "1.20.8",
-				verified: true,
+				FQDN:     "testy.cluster.io",
+				Size:     "large",
+				Count:    "20",
+				Version:  "1.20.8",
+				Verified: true,
 			},
 		},
 		{
 			name:   "delete defaults",
-			osargs: []string{"dispatch", "delete", "-fqdn", "dispatch.k8s.local"},
+			osargs: []string{"dispatch", "delete", "-FQDN", "dispatch.k8s.local"},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
-				fqdn:     "dispatch.k8s.local",
-				verified: false,
+				FQDN:     "dispatch.k8s.local",
+				Verified: false,
 			},
 		},
 		{
 			name:   "delete testy.cluster.io yolo",
-			osargs: []string{"dispatch", "delete", "-fqdn", "testy.cluster.io", "-yolo", "true"},
+			osargs: []string{"dispatch", "delete", "-FQDN", "testy.cluster.io", "-yolo", "true"},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
-				fqdn:     "testy.cluster.io",
-				verified: true,
+				FQDN:     "testy.cluster.io",
+				Verified: true,
 			},
 		},
 	}
@@ -176,7 +176,7 @@ func TestCLIWorkflow(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			os.Args = test.osargs
-			testEvent := CLIWorkflow("test-version", event)
+			testEvent := CLIWorkflow("test-Version", event)
 
 			if testEvent != test.expectedReturn {
 				t.Errorf("CLIWorkflow unit test failure '%s'\n got: '%v'\n want: '%v'", test.name, testEvent, test.expectedReturn)
@@ -188,11 +188,11 @@ func TestCLIWorkflow(t *testing.T) {
 func ExampleCLIWorkflow_version() {
 	var event KopsEvent
 
-	os.Args[1] = "version"
+	os.Args[1] = "Version"
 
-	CLIWorkflow("test-version", event)
+	CLIWorkflow("test-Version", event)
 
-	// Output: Dispatch version test-version
+	// Output: Dispatch Version test-Version
 }
 
 func ExampleCLIWorkflow_help() {
@@ -200,7 +200,7 @@ func ExampleCLIWorkflow_help() {
 
 	os.Args[1] = "-h"
 
-	CLIWorkflow("help-version", event)
+	CLIWorkflow("help-Version", event)
 
 	// Output: Dispatch options:
 	//  dispatch create -h
@@ -212,7 +212,7 @@ func ExampleCLIWorkflow_deleteHelp() {
 
 	os.Args = []string{"dispatch", "delete"}
 
-	CLIWorkflow("delete-version", event)
+	CLIWorkflow("delete-Version", event)
 
 	// Output:  ! cluster FQDN is required
 }
@@ -222,7 +222,7 @@ func ExampleCLIWorkflow_notValid() {
 
 	os.Args[1] = "none"
 
-	CLIWorkflow("none-version", event)
+	CLIWorkflow("none-Version", event)
 
 	// Output:  ! none is not a valid Dispatch option
 	//
