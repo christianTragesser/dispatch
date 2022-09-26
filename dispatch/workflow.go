@@ -18,8 +18,8 @@ func CLICreate(event KopsEvent) KopsEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createFQDN := createCommand.String("FQDN", "dispatch.k8s.local", "Cluster FQDN")
 	createSize := createCommand.String("Size", "small", "cluster node Size")
-	nodeCount := createCommand.String("nodes", "2", "cluster node Count")
-	createVersion := createCommand.String("Version", k8sVersion, "Kubernetes Version")
+	nodeCount := createCommand.String("nodes", "2", "cluster node count")
+	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
 	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
 
 	err := createCommand.Parse(os.Args[2:])

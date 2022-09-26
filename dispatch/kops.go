@@ -91,8 +91,8 @@ func RunKOPS(event KopsEvent) {
 			fmt.Printf(`
 Create cluster details
   - name: %s
-  - kubernetes Version: %s
-  - Size: %s
+  - kubernetes version: %s
+  - size: %s
   - nodes: %s`+"\n", event.FQDN, event.Version, event.Size, event.Count)
 		}
 
