@@ -150,6 +150,6 @@ Create cluster details
 
 	if event.Action == createAction {
 		fmt.Printf("\n Configure your kubectl client for cluster %s with command:\n", event.FQDN)
-		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n", event.FQDN)
+		fmt.Print("        export KUBECONFIG=\"$HOME/.dispatch/.kube/config\"\n\n")
 	}
 }

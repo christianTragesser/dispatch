@@ -16,8 +16,8 @@ type TUIEventAPI interface {
 
 func CLICreate(event KopsEvent) KopsEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createFQDN := createCommand.String("FQDN", "dispatch.k8s.local", "Cluster FQDN")
-	createSize := createCommand.String("Size", "small", "cluster node Size")
+	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
+	createSize := createCommand.String("size", "small", "cluster node Size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
 	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
@@ -38,7 +38,7 @@ func CLICreate(event KopsEvent) KopsEvent {
 
 func CLIDelete(event KopsEvent) KopsEvent {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
-	deleteFQDN := deleteCommand.String("FQDN", "", "Cluster FQDN")
+	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
 
 	err := deleteCommand.Parse(os.Args[2:])

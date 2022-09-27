@@ -142,7 +142,7 @@ func TestCLIWorkflow(t *testing.T) {
 		},
 		{
 			name:   "create k8s v1.20.8 large testy.cluster.io yolo",
-			osargs: []string{"dispatch", "create", "-FQDN", "testy.cluster.io", "-Size", "large", "-nodes", "20", "-Version", "1.20.8", "-yolo", "true"},
+			osargs: []string{"dispatch", "create", "-fqdn", "testy.cluster.io", "-size", "large", "-nodes", "20", "-version", "1.20.8", "-yolo", "true"},
 			expectedReturn: KopsEvent{
 				Action:   "create",
 				FQDN:     "testy.cluster.io",
@@ -154,7 +154,7 @@ func TestCLIWorkflow(t *testing.T) {
 		},
 		{
 			name:   "delete defaults",
-			osargs: []string{"dispatch", "delete", "-FQDN", "dispatch.k8s.local"},
+			osargs: []string{"dispatch", "delete", "-fqdn", "dispatch.k8s.local"},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
 				FQDN:     "dispatch.k8s.local",
@@ -163,7 +163,7 @@ func TestCLIWorkflow(t *testing.T) {
 		},
 		{
 			name:   "delete testy.cluster.io yolo",
-			osargs: []string{"dispatch", "delete", "-FQDN", "testy.cluster.io", "-yolo", "true"},
+			osargs: []string{"dispatch", "delete", "-fqdn", "testy.cluster.io", "-yolo", "true"},
 			expectedReturn: KopsEvent{
 				Action:   "delete",
 				FQDN:     "testy.cluster.io",
