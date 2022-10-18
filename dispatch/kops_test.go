@@ -60,7 +60,7 @@ func TestKopsEventCmd(t *testing.T) {
 				"--name=dispatch.k8s.local",
 				"--kubernetes-version="+k8sVersion,
 				"--cloud=aws",
-				"--cloud-labels=owner=test, CreatedBy=Dispatch",
+				"--cloud-labels=owner=test,CreatedBy=Dispatch",
 				"--state=s3://test-Bucket",
 				"--node-count=2",
 				"--node-size=t2.medium",
