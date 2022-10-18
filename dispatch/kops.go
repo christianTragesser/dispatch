@@ -24,7 +24,7 @@ func kopsEventCmd(kcmd kopsCmdAPI, binPath string, event KopsEvent) (*exec.Cmd, 
 	switch event.Action {
 	case createAction:
 		zones := kcmd.vpcZones()
-		labels := "owner=" + event.User + ", CreatedBy=Dispatch"
+		labels := "owner=" + event.User + ",CreatedBy=Dispatch"
 
 		ec2InstanceType, err := kcmd.ec2Type(event.Size)
 		if err != nil {
