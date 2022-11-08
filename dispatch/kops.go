@@ -47,6 +47,7 @@ func kopsEventCmd(kcmd kopsCmdAPI, binPath string, event KopsEvent) (*exec.Cmd, 
 			"--authorization=RBAC",
 			"--yes",
 		)
+		fmt.Println(kopsCmd)
 	case deleteAction:
 		kopsCmd = exec.Command(
 			binPath, "delete", "cluster",
@@ -68,7 +69,7 @@ func RunKOPS(event KopsEvent) {
 
 	home, _ := os.LookupEnv("HOME")
 
-	kopsBin := home + "/.dispatch/bin/" + kopsVersion + "/" + runtime.GOOS + "/kops"
+	kopsBin := home + "/.dispatch/bin/0.0.0/" + runtime.GOOS + "/kops"
 
 	err := os.Setenv("KUBECONFIG", home+"/.dispatch/.kube/config")
 	if err != nil {

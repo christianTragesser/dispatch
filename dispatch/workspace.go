@@ -21,8 +21,11 @@ const privMode int = 0600
 const pubMode int = 0644
 
 type workspace struct {
-	root, ssh, kube   string
-	binPath, kopsPath string
+	root       string
+	ssh        string
+	kube       string
+	binPath    string
+	pulumiPath string
 }
 
 func ensureDir(path string) {
@@ -145,65 +148,64 @@ func ensureDispatchConfig(dispatchDir string) string {
 	return dispatchUID
 }
 
-func removePreviousKopsBins(binPath string) {
+func removePreviousPulumiBins(binPath string) {
 	const preferredVersions = 1
 
 	installedVersions, err := os.ReadDir(binPath)
 	if err != nil {
-		reportErr(err, "list kOps binary directory")
+		reportErr(err, "list pulumi binary directory")
 	}
 
 	if len(installedVersions) > preferredVersions {
-		fmt.Println(" ^ kOps version update required")
+		fmt.Println(" ^ pulumi version update required")
 
 		for _, v := range installedVersions {
-			if v.Name() != kopsVersion {
+			if v.Name() != pulumiVersion {
 				err := os.RemoveAll(binPath + v.Name())
 				if err != nil {
-					reportErr(err, "delete previous kOps binary")
+					reportErr(err, "delete previous pulumi binary")
 				}
 			}
 		}
 	}
 }
 
-func ensureKOPS(workDir workspace) {
-	kopsDLPath := "https://github.com/kubernetes/kops/releases/download/v"
-	kopsURL := kopsDLPath + kopsVersion + "/kops-" + runtime.GOOS + "-" + runtime.GOARCH
-	kopsBin := workDir.kopsPath + "/kops"
+func ensurePulumi(workDir workspace) {
+	pulumiURL := "https://get.pulumi.com/releases/sdk/pulumi-v" + pulumiVersion + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
+	pulumiBin := workDir.pulumiPath + "/pulumi"
 
-	ensureDir(workDir.kopsPath)
-	removePreviousKopsBins(workDir.binPath)
+	ensureDir(workDir.pulumiPath)
+	removePreviousPulumiBins(workDir.binPath)
 
-	_, err := os.Stat(kopsBin)
+	_, err := os.Stat(pulumiBin)
 
 	if os.IsNotExist(err) {
-		fmt.Printf(" + Downloading kOps v%s\n", kopsVersion)
+		fmt.Printf(" + Downloading pulumi v%s\n", pulumiVersion)
 
-		resp, err := http.Get(kopsURL)
+		resp, err := http.Get(pulumiURL)
 
 		if err != nil {
-			reportErr(err, "download kOps")
+			reportErr(err, "download pulumi")
 		}
 		defer resp.Body.Close()
 
-		fileHandle, err := os.OpenFile(kopsBin, os.O_CREATE|os.O_APPEND|os.O_RDWR, fs.FileMode(pubMode))
+		fileHandle, err := os.OpenFile(pulumiBin, os.O_CREATE|os.O_APPEND|os.O_RDWR, fs.FileMode(pubMode))
 		if err != nil {
-			reportErr(err, "buffer kOps download")
+			reportErr(err, "buffer pulumi download")
 		}
 		defer fileHandle.Close()
 
 		_, err = io.Copy(fileHandle, resp.Body)
 		if err != nil {
-			reportErr(err, "save kOps binary")
+			reportErr(err, "save pulumi binary")
 		}
 
-		err = os.Chmod(kopsBin, fs.FileMode(binMode))
+		err = os.Chmod(pulumiBin, fs.FileMode(binMode))
 		if err != nil {
-			reportErr(err, "set file permissions for kOps binary")
+			reportErr(err, "set file permissions for pulumi binary")
 		}
 	} else {
-		fmt.Printf(" . Found kOps at %s\n", kopsBin)
+		fmt.Printf(" . Found pulumi at %s\n", pulumiBin)
 	}
 }
 
@@ -216,17 +218,17 @@ func ensureWorkspace() string {
 		dispatchDir := home + "/.dispatch"
 
 		sessionDirs := workspace{
-			root:     dispatchDir,
-			ssh:      dispatchDir + "/.ssh",
-			kube:     dispatchDir + "/.kube",
-			binPath:  dispatchDir + "/bin/",
-			kopsPath: dispatchDir + "/bin/" + kopsVersion + "/" + runtime.GOOS,
+			root:       dispatchDir,
+			ssh:        dispatchDir + "/.ssh",
+			kube:       dispatchDir + "/.kube",
+			binPath:    dispatchDir + "/bin/",
+			pulumiPath: dispatchDir + "/bin/" + pulumiVersion + "/" + runtime.GOOS,
 		}
 
 		ensureDir(sessionDirs.root)
 		ensureRSAKeys(sessionDirs.ssh)
 		ensureKubeConfig(sessionDirs.kube)
-		ensureKOPS(sessionDirs)
+		ensurePulumi(sessionDirs)
 		dispatchUID = ensureDispatchConfig(sessionDirs.root)
 	} else {
 		fmt.Print("$HOME environment variable not found, exiting.\n")
