@@ -1,6 +1,8 @@
 package dispatch
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,7 +12,9 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 	"sigs.k8s.io/yaml"
@@ -156,56 +160,131 @@ func removePreviousPulumiBins(binPath string) {
 		reportErr(err, "list pulumi binary directory")
 	}
 
-	if len(installedVersions) > preferredVersions {
-		fmt.Println(" ^ pulumi version update required")
+	for _, v := range installedVersions {
+		if v.Name() != pulumiVersion {
+			fmt.Printf(" - removing version %s of omnibus pulumi", v.Name())
+			fmt.Println(filepath.Join(binPath, v.Name()))
 
-		for _, v := range installedVersions {
-			if v.Name() != pulumiVersion {
-				err := os.RemoveAll(binPath + v.Name())
-				if err != nil {
-					reportErr(err, "delete previous pulumi binary")
-				}
+			err := os.RemoveAll(filepath.Join(binPath, v.Name()))
+			if err != nil {
+				reportErr(err, "delete previous pulumi binary")
 			}
 		}
 	}
 }
 
+func extractTarGz(archivePath string) {
+	fileStream, err := os.Open(archivePath)
+	if err != nil {
+		reportErr(err, "open archive file")
+	}
+
+	tarStream, err := gzip.NewReader(fileStream)
+	if err != nil {
+		reportErr(err, "decompress gzip file")
+	}
+	defer tarStream.Close()
+
+	tarReader := tar.NewReader(tarStream)
+
+	// use archive path to set extraction location
+	destinationSplit := strings.Split(archivePath, "/")
+	artifactName := destinationSplit[len(destinationSplit)-1]
+
+	if len(destinationSplit) > 0 {
+		destinationSplit = destinationSplit[:len(destinationSplit)-1]
+	}
+
+	destinationPath := strings.Join(destinationSplit, "/")
+
+	extractDir := filepath.Join(destinationPath, strings.Split(artifactName, "-")[0])
+
+	if _, err := os.Stat(extractDir); err != nil {
+		if err := os.Mkdir(extractDir, fs.FileMode(binMode)); err != nil {
+			reportErr(err, "create extraction directory")
+		}
+	}
+
+	for {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			reportErr(err, "untar archive file")
+		}
+
+		if header == nil {
+			continue
+		}
+
+		destinationTarget := filepath.Join(destinationPath, header.Name) // #nosec
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := os.Stat(destinationTarget); err != nil {
+				if err := os.Mkdir(destinationTarget, fs.FileMode(binMode)); err != nil {
+					reportErr(err, "create archive directory")
+				}
+			}
+		case tar.TypeReg:
+			f, err := os.OpenFile(destinationTarget, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
+			if err != nil {
+				reportErr(err, "open archive file destination")
+			}
+
+			if _, err := io.Copy(f, tarReader); err != nil {
+				reportErr(err, "copy archive file contents")
+			} // #nosec
+
+			f.Close()
+		default:
+			reportErr(nil, "unknown type archive type")
+		}
+	}
+}
+
 func ensurePulumi(workDir workspace) {
-	pulumiURL := "https://get.pulumi.com/releases/sdk/pulumi-v" + pulumiVersion + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
-	pulumiBin := workDir.pulumiPath + "/pulumi"
+	// it appears there isn't a pulumi binary for ARM?
+	baseURL := "https://github.com/pulumi/pulumi/releases/download/v" + pulumiVersion + "/"
+	artifactFile := "pulumi-v" + pulumiVersion + "-" + runtime.GOOS + "-x64.tar.gz"
+	tarURL := baseURL + artifactFile
 
 	ensureDir(workDir.pulumiPath)
 	removePreviousPulumiBins(workDir.binPath)
 
-	_, err := os.Stat(pulumiBin)
+	// check for omnibus install of pulumi
+	_, err := os.Stat(filepath.Join(workDir.pulumiPath, "pulumi", "pulumi"))
 
 	if os.IsNotExist(err) {
-		fmt.Printf(" + Downloading pulumi v%s\n", pulumiVersion)
+		fmt.Printf(" + Installing omnibus pulumi version %s\n", pulumiVersion)
 
-		resp, err := http.Get(pulumiURL)
-
+		// create destination .tar.gz file
+		tarGz, err := os.Create(workDir.pulumiPath + "/" + artifactFile)
 		if err != nil {
-			reportErr(err, "download pulumi")
+			reportErr(err, "create pulumi artifact")
+		}
+		defer tarGz.Close()
+
+		// download pulumi release artifact
+		resp, err := http.Get(tarURL)
+		if err != nil {
+			reportErr(err, "download pulumi artifact")
 		}
 		defer resp.Body.Close()
 
-		fileHandle, err := os.OpenFile(pulumiBin, os.O_CREATE|os.O_APPEND|os.O_RDWR, fs.FileMode(pubMode))
+		// write artifact archive file to destination file
+		_, err = io.Copy(tarGz, resp.Body)
 		if err != nil {
-			reportErr(err, "buffer pulumi download")
-		}
-		defer fileHandle.Close()
-
-		_, err = io.Copy(fileHandle, resp.Body)
-		if err != nil {
-			reportErr(err, "save pulumi binary")
+			reportErr(err, "save pulumi artifact")
 		}
 
-		err = os.Chmod(pulumiBin, fs.FileMode(binMode))
-		if err != nil {
-			reportErr(err, "set file permissions for pulumi binary")
-		}
+		// extract pulumi archive file
+		extractTarGz(filepath.Join(workDir.pulumiPath, artifactFile))
 	} else {
-		fmt.Printf(" . Found pulumi at %s\n", pulumiBin)
+		fmt.Printf(" . Found pulumi at %s\n", workDir.pulumiPath)
 	}
 }
 
@@ -215,14 +294,14 @@ func ensureWorkspace() string {
 	home, homeSet := os.LookupEnv("HOME")
 
 	if homeSet {
-		dispatchDir := home + "/.dispatch"
+		dispatchDir := filepath.Join(home, ".dispatch")
 
 		sessionDirs := workspace{
 			root:       dispatchDir,
-			ssh:        dispatchDir + "/.ssh",
-			kube:       dispatchDir + "/.kube",
-			binPath:    dispatchDir + "/bin/",
-			pulumiPath: dispatchDir + "/bin/" + pulumiVersion + "/" + runtime.GOOS,
+			ssh:        filepath.Join(dispatchDir, ".ssh"),
+			kube:       filepath.Join(dispatchDir, ".kube"),
+			binPath:    filepath.Join(dispatchDir, "bin", "pulumi"),
+			pulumiPath: filepath.Join(dispatchDir, "bin", "pulumi", pulumiVersion, runtime.GOOS),
 		}
 
 		ensureDir(sessionDirs.root)
