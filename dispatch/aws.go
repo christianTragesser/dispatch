@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -276,6 +277,14 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 }
 
 func setEKSConfig(clusterID string, FQDN string) {
+
+	home, homeSet := os.LookupEnv("HOME")
+	if !homeSet {
+		fmt.Println("$HOME not set")
+	}
+
+	kubeconfigPath := filepath.Join(home, ".dispatch", ".kube", "config")
+	os.Setenv("KUBECONFIG", kubeconfigPath)
 
 	cmd := exec.Command(
 		"aws", "eks", "--region", "us-east-1",
