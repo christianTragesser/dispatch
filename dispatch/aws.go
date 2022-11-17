@@ -229,8 +229,8 @@ func listExistingClusters(bucket string) []string {
 	s3Client := s3.NewFromConfig(*clientConfig)
 
 	listConfig := &s3.ListObjectsV2Input{
-		Bucket:    &bucket,
-		Delimiter: aws.String("/"),
+		Bucket: &bucket,
+		Prefix: aws.String(".pulumi/stacks/"),
 	}
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
@@ -238,9 +238,11 @@ func listExistingClusters(bucket string) []string {
 		reportErr(err, "list S3 items in KOPS state store")
 	}
 
-	if len(objects.CommonPrefixes) > 0 {
-		for _, item := range objects.CommonPrefixes {
-			clusters = append(clusters, strings.Trim(*item.Prefix, "/"))
+	if len(objects.Contents) > 0 {
+		for _, item := range objects.Contents {
+			if !strings.Contains(*item.Key, ".bak") {
+				clusters = append(clusters, *item.Key)
+			}
 		}
 	}
 
@@ -251,7 +253,7 @@ func printExistingClusters(bucket string) {
 	clusters := listExistingClusters(bucket)
 
 	if len(clusters) > 0 {
-		fmt.Print(" - Found existing KOPS clusters:\n")
+		fmt.Print(" - Found existing EKS clusters:\n")
 
 		for _, item := range clusters {
 			fmt.Printf("\t <> %s \n", item)
@@ -273,7 +275,7 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 	return s3Client.HeadObject(context.TODO(), input)
 }
 
-func setKubeconfig(clusterID string, FQDN string) {
+func setEKSConfig(clusterID string, FQDN string) {
 
 	cmd := exec.Command(
 		"aws", "eks", "--region", "us-east-1",
