@@ -128,11 +128,11 @@ func getAccountNumber() string {
 	return *response.Account
 }
 
-// create S3 bucket for kops cluster state
-func createKOPSBucket(clientConfig aws.Config, bucketName string) {
+// create S3 bucket for provisioning state
+func createStateBucket(clientConfig aws.Config, bucketName string) {
 	s3Client := s3.NewFromConfig(clientConfig)
 
-	// create private KOPS bucket
+	// create private bucket
 	createSettings := &s3.CreateBucketInput{
 		Bucket: &bucketName,
 		ACL:    "private",
@@ -196,7 +196,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 
 	for i := range buckets.Buckets {
 		if *buckets.Buckets[i].Name == kopsBucket {
-			fmt.Printf(" . Using s3://%s for KOPS state\n", kopsBucket)
+			fmt.Printf(" . Using s3://%s for provisioning state store\n", kopsBucket)
 
 			bucketExists = true
 
@@ -212,7 +212,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 		fmt.Scanf("%s", &createBucket)
 
 		if createBucket == "y" || createBucket == "Y" {
-			createKOPSBucket(clientConfig, kopsBucket)
+			createStateBucket(clientConfig, kopsBucket)
 		} else {
 			fmt.Print("\n S3 bucket is required for cluster provisioning, exiting.\n\n")
 			os.Exit(0)
