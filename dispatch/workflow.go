@@ -14,9 +14,9 @@ type TUIEventAPI interface {
 	getClusterCreationDate(Bucket string, cluster string) string
 }
 
-func CLICreate(event KopsEvent) KopsEvent {
+func CLICreate(event DispatchEvent) DispatchEvent {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createFQDN := createCommand.String("fqdn", "dispatch.k8s.local", "Cluster FQDN")
+	createFQDN := createCommand.String("fqdn", "", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node Size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
@@ -36,7 +36,7 @@ func CLICreate(event KopsEvent) KopsEvent {
 	return event
 }
 
-func CLIDelete(event KopsEvent) KopsEvent {
+func CLIDelete(event DispatchEvent) DispatchEvent {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
@@ -49,7 +49,7 @@ func CLIDelete(event KopsEvent) KopsEvent {
 	if *deleteFQDN == "" {
 		fmt.Print(" ! cluster FQDN is required\n\n")
 
-		return KopsEvent{Action: exitStatus}
+		return DispatchEvent{Action: exitStatus}
 	}
 
 	event.FQDN = *deleteFQDN
@@ -58,7 +58,7 @@ func CLIDelete(event KopsEvent) KopsEvent {
 	return event
 }
 
-func CLIWorkflow(dispatchVersion string, event KopsEvent) KopsEvent {
+func CLIWorkflow(dispatchVersion string, event DispatchEvent) DispatchEvent {
 	action := os.Args[1]
 
 	switch action {
@@ -89,7 +89,7 @@ func CLIWorkflow(dispatchVersion string, event KopsEvent) KopsEvent {
 	return event
 }
 
-func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
+func TUIWorkflow(te TUIEventAPI, event DispatchEvent) DispatchEvent {
 	action := te.getTUIAction()
 
 	switch action {
@@ -120,13 +120,13 @@ func TUIWorkflow(te TUIEventAPI, event KopsEvent) KopsEvent {
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 
-			return KopsEvent{Action: exitStatus}
+			return DispatchEvent{Action: exitStatus}
 		}
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", event.Action)
 
-		return KopsEvent{Action: exitStatus}
+		return DispatchEvent{Action: exitStatus}
 	}
 
 	return event

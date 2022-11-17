@@ -18,29 +18,34 @@ const (
 	exitStatus    string = "exit"
 )
 
-type KopsEvent struct {
-	Action                                   string
-	Bucket, Count, FQDN, Size, User, Version string
-	Verified                                 bool
+type DispatchEvent struct {
+	Action   string
+	Bucket   string
+	Count    string
+	FQDN     string
+	Size     string
+	User     string
+	Version  string
+	Verified bool
 }
 
-func (e KopsEvent) getTUIAction() string {
+func (e DispatchEvent) getTUIAction() string {
 	return tuiaction.Action()
 }
 
-func (e KopsEvent) tuiCreate() []string {
+func (e DispatchEvent) tuiCreate() []string {
 	return tuicreate.Create()
 }
 
-func (e KopsEvent) tuiDelete(clusters []map[string]string) string {
+func (e DispatchEvent) tuiDelete(clusters []map[string]string) string {
 	return tuidelete.SelectCluster(clusters)
 }
 
-func (e KopsEvent) getClusters(bucket string) []string {
+func (e DispatchEvent) getClusters(bucket string) []string {
 	return listExistingClusters(bucket)
 }
 
-func (e KopsEvent) getClusterCreationDate(bucket string, cluster string) string {
+func (e DispatchEvent) getClusterCreationDate(bucket string, cluster string) string {
 	metadata, err := getObjectMetadata(bucket, cluster)
 	if err != nil {
 		return notFound
@@ -49,10 +54,10 @@ func (e KopsEvent) getClusterCreationDate(bucket string, cluster string) string 
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
 
-func (e KopsEvent) vpcZones() string {
+func (e DispatchEvent) vpcZones() string {
 	return getZones()
 }
 
-func (e KopsEvent) ec2Type(sizeName string) (string, error) {
+func (e DispatchEvent) ec2Type(sizeName string) (string, error) {
 	return getNodeSize(sizeName)
 }

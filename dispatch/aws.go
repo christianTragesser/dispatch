@@ -5,7 +5,9 @@ package dispatch
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -187,7 +189,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 
 	accountNumber := getAccountNumber()
 
-	kopsBucket := user + "-dispatch-kops-state-store-" + accountNumber
+	kopsBucket := user + "-dispatch-state-store-" + accountNumber
 
 	buckets := getS3Buckets(clientConfig)
 
@@ -204,7 +206,7 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	if !bucketExists {
 		var createBucket string
 
-		fmt.Printf(" ! S3 bucket %s for KOPS state doesn't exists\n", kopsBucket)
+		fmt.Printf(" ! S3 bucket %s for stack state does not exists\n", kopsBucket)
 		fmt.Printf("\n ? Create S3 bucket %s (y/n): ", kopsBucket)
 		fmt.Scanf("%s", &createBucket)
 
@@ -269,4 +271,33 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 	}
 
 	return s3Client.HeadObject(context.TODO(), input)
+}
+
+func setKubeconfig(clusterID string, FQDN string) {
+
+	cmd := exec.Command(
+		"aws", "eks", "--region", "us-east-1",
+		"update-kubeconfig", "--name", clusterID,
+		"--alias", FQDN,
+	)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		reportErr(err, "display aws eks cmd stdout")
+	}
+
+	if err := cmd.Start(); err != nil {
+		reportErr(err, "start aws eks update")
+	}
+
+	data, err := io.ReadAll(stdout)
+	if err != nil {
+		reportErr(err, "read aws eks stdout")
+	}
+
+	if err := cmd.Wait(); err != nil {
+		reportErr(err, "update kubeconfig")
+	}
+
+	fmt.Println(string(data))
 }

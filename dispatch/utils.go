@@ -23,7 +23,7 @@ func clusterExists(s []string, str string) bool {
 	return false
 }
 
-func EnsureDependencies(event KopsEvent) KopsEvent {
+func EnsureDependencies(event DispatchEvent) DispatchEvent {
 	fmt.Print("\nEnsuring dependencies:\n")
 
 	event.User = ensureWorkspace()

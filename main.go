@@ -15,7 +15,7 @@ var asciiArt = "\n" + `______  _____ _______  _____  _______ _______ _______ _  
 var version = "dev-rc"
 
 func main() {
-	var sessionEvent dispatch.KopsEvent
+	var sessionEvent dispatch.DispatchEvent
 
 	if len(os.Args) > 1 {
 		// subcommand provided, use CLI workflow
@@ -33,7 +33,7 @@ func main() {
 
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 
-		TUIAPI := dispatch.KopsEvent{}
+		TUIAPI := dispatch.DispatchEvent{}
 
 		sessionEvent = dispatch.TUIWorkflow(TUIAPI, sessionEvent)
 
@@ -42,5 +42,5 @@ func main() {
 		}
 	}
 
-	dispatch.RunKOPS(sessionEvent)
+	dispatch.Exec(sessionEvent)
 }
