@@ -20,6 +20,7 @@ import (
 )
 
 func setPulumiEngine(bucket string) {
+	fmt.Println("\nPulumi login to S3 backend....")
 	path, pathSet := os.LookupEnv("PATH")
 	if !pathSet {
 		fmt.Println("$PATH not set")
@@ -125,18 +126,13 @@ func Exec(event DispatchEvent) {
 
 	ctx := context.Background()
 
-	projectName := event.User + "-" + strings.Split(event.FQDN, ".")[0] + "_eks"
+	projectID := event.User + "-eks"
+	stackID := strings.ReplaceAll(event.FQDN, ".", "-") + "-eks"
 
-	stackName := event.User + "-eks"
-
-	fmt.Printf("Project: %s\n", projectName)
-	fmt.Printf("Stack: %s\n", stackName)
-
-	s, err := auto.UpsertStackInlineSource(ctx, stackName, projectName, deploy)
+	s, err := auto.UpsertStackInlineSource(ctx, stackID, projectID, deploy)
 
 	w := s.Workspace()
 
-	fmt.Println("Installing plugins...")
 	err = w.InstallPlugin(ctx, "aws", "v4.0.0")
 	if err != nil {
 		reportErr(err, "Failed to install program plugins")
@@ -147,7 +143,6 @@ func Exec(event DispatchEvent) {
 		region = "us-east-1"
 	}
 
-	fmt.Printf("AWS region: %s\n", region)
 	s.SetConfig(ctx, "aws:region", auto.ConfigValue{Value: region})
 
 	_, err = s.Refresh(ctx)
@@ -158,6 +153,10 @@ func Exec(event DispatchEvent) {
 	if !event.Verified {
 		var valid string
 
+		fmt.Printf(" Pulumi project: %s", projectID)
+		fmt.Printf("\n Pulumi stack: %s", stackID)
+		fmt.Printf("\n AWS region: %s\n", region)
+
 		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.FQDN)
 		fmt.Scanf("%s", &valid)
 
@@ -166,7 +165,29 @@ func Exec(event DispatchEvent) {
 		}
 	}
 
-	if event.Action == "delete" {
+	switch event.Action {
+	case "create":
+		stdoutStreamer := optup.ProgressStreams(os.Stdout)
+
+		res, err := s.Up(ctx, stdoutStreamer)
+		if err != nil {
+			reportErr(err, "Failed to update stack.")
+		}
+
+		output := res.Outputs["cluster"].Value.(map[string]interface{})
+
+		cluster := make(map[string]string)
+
+		for k, v := range output {
+			switch v.(type) {
+			case string:
+				cluster[k] = fmt.Sprintf("%v", v)
+
+			}
+		}
+
+		setEKSConfig(cluster["id"], event.FQDN)
+	case "delete":
 		fmt.Println("Starting stack destroy")
 
 		// wire up our destroy to stream progress to stdout
@@ -179,27 +200,9 @@ func Exec(event DispatchEvent) {
 		}
 		fmt.Println("Stack successfully destroyed")
 		os.Exit(0)
+	default:
+		fmt.Println("Unknown pulumi action.")
 	}
 
-	stdoutStreamer := optup.ProgressStreams(os.Stdout)
-
-	res, err := s.Up(ctx, stdoutStreamer)
-	if err != nil {
-		reportErr(err, "Failed to update stack.")
-	}
-
-	output := res.Outputs["cluster"].Value.(map[string]interface{})
-
-	cluster := make(map[string]string)
-
-	for k, v := range output {
-		switch v.(type) {
-		case string:
-			cluster[k] = fmt.Sprintf("%v", v)
-
-		}
-	}
-
-	setKubeconfig(cluster["id"], event.FQDN)
-
+	os.Exit(0)
 }
