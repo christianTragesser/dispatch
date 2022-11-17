@@ -3,10 +3,6 @@ package dispatch
 import (
 	"archive/tar"
 	"compress/gzip"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"io/fs"
@@ -16,7 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	"golang.org/x/crypto/ssh"
 	"sigs.k8s.io/yaml"
 )
 
@@ -26,7 +21,6 @@ const pubMode int = 0644
 
 type workspace struct {
 	root       string
-	ssh        string
 	kube       string
 	binPath    string
 	pulumiPath string
@@ -36,55 +30,6 @@ func ensureDir(path string) {
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		reportErr(err, "creating dispatch workspace")
-	}
-}
-
-func ensureRSAKeys(sshDir string) {
-	keyFile := sshDir + "/kops_rsa"
-	bitSize := 4096
-
-	ensureDir(sshDir)
-
-	_, err := os.Stat(keyFile)
-
-	if os.IsNotExist(err) {
-		fmt.Printf(" + Creating RSA key %s for KOPS\n", keyFile)
-		// Create private RSA key in PEM format
-		key, err := rsa.GenerateKey(rand.Reader, bitSize)
-		if err != nil {
-			reportErr(err, "create RSA key")
-		}
-
-		err = key.Validate()
-		if err != nil {
-			reportErr(err, "validate private key")
-		}
-
-		keyPEM := pem.EncodeToMemory(
-			&pem.Block{
-				Type:  "RSA PRIVATE KEY",
-				Bytes: x509.MarshalPKCS1PrivateKey(key),
-			},
-		)
-
-		// Create ssh-rsa public key
-		pubRSAKey, err := ssh.NewPublicKey(&key.PublicKey)
-		if err != nil {
-			reportErr(err, "create public RSA key")
-		}
-
-		pubKeyBytes := ssh.MarshalAuthorizedKey(pubRSAKey)
-
-		// Write RSA key pair to disk
-		if err := os.WriteFile(keyFile, keyPEM, fs.FileMode(privMode)); err != nil {
-			reportErr(err, "save private key")
-		}
-
-		if err := os.WriteFile(keyFile+".pub", pubKeyBytes, fs.FileMode(pubMode)); err != nil {
-			reportErr(err, "save public key")
-		}
-	} else {
-		fmt.Printf(" . Found %s RSA private key\n", keyFile)
 	}
 }
 
@@ -298,14 +243,12 @@ func ensureWorkspace() string {
 
 		sessionDirs := workspace{
 			root:       dispatchDir,
-			ssh:        filepath.Join(dispatchDir, ".ssh"),
 			kube:       filepath.Join(dispatchDir, ".kube"),
 			binPath:    filepath.Join(dispatchDir, "bin", "pulumi"),
 			pulumiPath: filepath.Join(dispatchDir, "bin", "pulumi", pulumiVersion, runtime.GOOS),
 		}
 
 		ensureDir(sessionDirs.root)
-		ensureRSAKeys(sessionDirs.ssh)
 		ensureKubeConfig(sessionDirs.kube)
 		ensurePulumi(sessionDirs)
 		dispatchUID = ensureDispatchConfig(sessionDirs.root)
