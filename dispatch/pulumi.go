@@ -199,7 +199,9 @@ func Exec(event DispatchEvent) {
 			fmt.Printf("Failed to destroy stack: %v", err)
 		}
 		fmt.Println("Stack successfully destroyed")
-		os.Exit(0)
+
+		fmt.Printf("Removing %s stack history and configuration.\n", stackID)
+		w.RemoveStack(ctx, stackID)
 	default:
 		fmt.Println("Unknown pulumi action.")
 	}
