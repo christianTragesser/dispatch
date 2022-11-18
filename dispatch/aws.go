@@ -334,4 +334,6 @@ func setEKSConfig(clusterID string, fqdn string) {
 	}
 
 	fmt.Println(string(data))
+
+	fmt.Printf("\n export KUBECONFIG='%s' for kubectl access to cluster %s\n\n", kubeconfigPath, fqdn)
 }
