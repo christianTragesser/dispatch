@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type TUIEventAPI interface {
@@ -130,4 +131,18 @@ func TUIWorkflow(te TUIEventAPI, event Event) Event {
 	}
 
 	return event
+}
+
+func clusterExists(event Event) bool {
+	stackID := strings.ReplaceAll(event.FQDN, ".", "-") + "-eks"
+
+	clusters := listExistingClusters(event.Bucket)
+
+	for _, cluster := range clusters {
+		if strings.Contains(cluster, stackID) {
+			return true
+		}
+	}
+
+	return false
 }

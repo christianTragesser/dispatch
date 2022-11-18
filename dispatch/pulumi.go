@@ -123,6 +123,13 @@ func Exec(event Event) {
 		return nil
 	}
 
+	if event.Action == deleteAction {
+		if !clusterExists(event) {
+			fmt.Printf("\n %s was not found, exiting.\n\n", event.FQDN)
+			os.Exit(0)
+		}
+	}
+
 	setPulumiEngine(event.Bucket)
 	os.Setenv("PULUMI_CONFIG_PASSPHRASE", "Hello1234")
 
