@@ -1,6 +1,9 @@
 package dispatch
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
 	"github.com/christiantragesser/dispatch/tuidelete"
@@ -62,4 +65,11 @@ func (e Event) vpcZones() string {
 
 func (e Event) ec2Type(sizeName string) (string, error) {
 	return getNodeSize(sizeName)
+}
+
+func reportErr(err error, activity string) {
+	fmt.Printf(" ! Failed to %s\n\n", activity)
+	fmt.Print(err)
+	fmt.Print("\n")
+	os.Exit(1)
 }

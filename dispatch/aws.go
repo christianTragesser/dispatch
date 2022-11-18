@@ -21,6 +21,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+func getNodeSize(size string) (string, error) {
+	var ec2Instance string
+
+	nodeSize := strings.ToUpper(size)
+
+	switch nodeSize {
+	case "SMALL", "S":
+		ec2Instance = smallEC2
+	case "MEDIUM", "M":
+		ec2Instance = mediumEC2
+	case "LARGE", "L":
+		ec2Instance = largeEC2
+	default:
+		return "", fmt.Errorf("invalid node size: %s", size)
+	}
+
+	return ec2Instance, nil
+}
+
 // create and configure AWS SDK client
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
@@ -254,7 +273,7 @@ func printExistingClusters(bucket string) {
 	clusters := listExistingClusters(bucket)
 
 	if len(clusters) > 0 {
-		fmt.Print(" - Found existing EKS clusters:\n")
+		fmt.Print(" - Existing stack configurations:\n")
 
 		for _, item := range clusters {
 			fmt.Printf("\t <> %s \n", item)
