@@ -36,7 +36,7 @@ func (e mockTUIEvent) getClusterCreationDate(bucket string, cluster string) stri
 }
 
 func ExampleCLIWorkflow_version() {
-	var event DispatchEvent
+	var event Event
 
 	os.Args[1] = "Version"
 
@@ -46,7 +46,7 @@ func ExampleCLIWorkflow_version() {
 }
 
 func ExampleCLIWorkflow_help() {
-	var event DispatchEvent
+	var event Event
 
 	os.Args[1] = "-h"
 
@@ -58,7 +58,7 @@ func ExampleCLIWorkflow_help() {
 }
 
 func ExampleCLIWorkflow_deleteHelp() {
-	var event DispatchEvent
+	var event Event
 
 	os.Args = []string{"dispatch", "delete"}
 
@@ -68,7 +68,7 @@ func ExampleCLIWorkflow_deleteHelp() {
 }
 
 func ExampleCLIWorkflow_notValid() {
-	var event DispatchEvent
+	var event Event
 
 	os.Args[1] = "none"
 
@@ -81,7 +81,7 @@ func ExampleCLIWorkflow_notValid() {
 
 func ExampleTUIWorkflow_notValid() {
 	teAPI := mockTUIEvent{}
-	testEvent := DispatchEvent{Action: "test"}
+	testEvent := Event{Action: "test"}
 
 	TUIWorkflow(teAPI, testEvent)
 

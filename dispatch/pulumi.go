@@ -21,6 +21,7 @@ import (
 
 func setPulumiEngine(bucket string) {
 	fmt.Println("\nPulumi login to S3 backend....")
+
 	path, pathSet := os.LookupEnv("PATH")
 	if !pathSet {
 		fmt.Println("$PATH not set")
@@ -55,10 +56,9 @@ func setPulumiEngine(bucket string) {
 	}
 
 	fmt.Printf("%s\n", string(data))
-
 }
 
-func Exec(event DispatchEvent) {
+func Exec(event Event) {
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
 		eksID := strings.ReplaceAll(event.FQDN, ".", "-")
@@ -68,12 +68,14 @@ func Exec(event DispatchEvent) {
 		if err != nil {
 			reportErr(err, "get cluster node count")
 		}
-		maxClusterSize := minClusterSize + 2
+
+		maxClusterSize := minClusterSize + defaultScale
 
 		eksNodeInstanceType, err := getNodeSize(event.Size)
 		if err != nil {
 			reportErr(err, "get node instance type")
 		}
+
 		vpcNetworkCidr := "10.0.0.0/16"
 
 		// Create a new VPC, subnets, and associated infrastructure
@@ -130,12 +132,15 @@ func Exec(event DispatchEvent) {
 	stackID := strings.ReplaceAll(event.FQDN, ".", "-") + "-eks"
 
 	s, err := auto.UpsertStackInlineSource(ctx, stackID, projectID, deploy)
+	if err != nil {
+		reportErr(err, "create inline source")
+	}
 
 	w := s.Workspace()
 
 	err = w.InstallPlugin(ctx, "aws", "v4.0.0")
 	if err != nil {
-		reportErr(err, "Failed to install program plugins")
+		reportErr(err, "install program plugins")
 	}
 
 	region, regionSet := os.LookupEnv("AWS_REGION")
@@ -143,11 +148,13 @@ func Exec(event DispatchEvent) {
 		region = "us-east-1"
 	}
 
-	s.SetConfig(ctx, "aws:region", auto.ConfigValue{Value: region})
+	if err := s.SetConfig(ctx, "aws:region", auto.ConfigValue{Value: region}); err != nil {
+		reportErr(err, "set pulumi config")
+	}
 
 	_, err = s.Refresh(ctx)
 	if err != nil {
-		reportErr(err, "Failed to refresh stack")
+		reportErr(err, "failed to refresh stack")
 	}
 
 	if !event.Verified {
@@ -182,7 +189,8 @@ func Exec(event DispatchEvent) {
 			switch v.(type) {
 			case string:
 				cluster[k] = fmt.Sprintf("%v", v)
-
+			default:
+				reportErr(nil, "determine type")
 			}
 		}
 
@@ -198,10 +206,14 @@ func Exec(event DispatchEvent) {
 		if err != nil {
 			fmt.Printf("Failed to destroy stack: %v", err)
 		}
+
 		fmt.Println("Stack successfully destroyed")
 
 		fmt.Printf("Removing %s stack history and configuration.\n", stackID)
-		w.RemoveStack(ctx, stackID)
+
+		if err := w.RemoveStack(ctx, stackID); err != nil {
+			reportErr(err, "remove stack")
+		}
 	default:
 		fmt.Println("Unknown pulumi action.")
 	}

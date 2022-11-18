@@ -16,9 +16,11 @@ const (
 	deleteAction  string = "delete"
 	notFound      string = "not found"
 	exitStatus    string = "exit"
+	defaultRegion string = "us-east-1"
+	defaultScale  int    = 2
 )
 
-type DispatchEvent struct {
+type Event struct {
 	Action   string
 	Bucket   string
 	Count    string
@@ -29,23 +31,23 @@ type DispatchEvent struct {
 	Verified bool
 }
 
-func (e DispatchEvent) getTUIAction() string {
+func (e Event) getTUIAction() string {
 	return tuiaction.Action()
 }
 
-func (e DispatchEvent) tuiCreate() []string {
+func (e Event) tuiCreate() []string {
 	return tuicreate.Create()
 }
 
-func (e DispatchEvent) tuiDelete(clusters []map[string]string) string {
+func (e Event) tuiDelete(clusters []map[string]string) string {
 	return tuidelete.SelectCluster(clusters)
 }
 
-func (e DispatchEvent) getClusters(bucket string) []string {
+func (e Event) getClusters(bucket string) []string {
 	return listExistingClusters(bucket)
 }
 
-func (e DispatchEvent) getClusterCreationDate(bucket string, cluster string) string {
+func (e Event) getClusterCreationDate(bucket string, cluster string) string {
 	metadata, err := getObjectMetadata(bucket, cluster)
 	if err != nil {
 		return notFound
@@ -54,10 +56,10 @@ func (e DispatchEvent) getClusterCreationDate(bucket string, cluster string) str
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
 
-func (e DispatchEvent) vpcZones() string {
+func (e Event) vpcZones() string {
 	return getZones()
 }
 
-func (e DispatchEvent) ec2Type(sizeName string) (string, error) {
+func (e Event) ec2Type(sizeName string) (string, error) {
 	return getNodeSize(sizeName)
 }

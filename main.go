@@ -15,7 +15,7 @@ var asciiArt = "\n" + `______  _____ _______  _____  _______ _______ _______ _  
 var version = "dev-rc"
 
 func main() {
-	var sessionEvent dispatch.DispatchEvent
+	var sessionEvent dispatch.Event
 
 	if len(os.Args) > 1 {
 		// subcommand provided, use CLI workflow
@@ -33,7 +33,7 @@ func main() {
 
 		sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 
-		TUIAPI := dispatch.DispatchEvent{}
+		TUIAPI := dispatch.Event{}
 
 		sessionEvent = dispatch.TUIWorkflow(TUIAPI, sessionEvent)
 

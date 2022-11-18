@@ -14,7 +14,7 @@ type TUIEventAPI interface {
 	getClusterCreationDate(Bucket string, cluster string) string
 }
 
-func CLICreate(event DispatchEvent) DispatchEvent {
+func CLICreate(event Event) Event {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createFQDN := createCommand.String("fqdn", "", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node Size")
@@ -36,7 +36,7 @@ func CLICreate(event DispatchEvent) DispatchEvent {
 	return event
 }
 
-func CLIDelete(event DispatchEvent) DispatchEvent {
+func CLIDelete(event Event) Event {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
 	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
@@ -49,7 +49,7 @@ func CLIDelete(event DispatchEvent) DispatchEvent {
 	if *deleteFQDN == "" {
 		fmt.Print(" ! cluster FQDN is required\n\n")
 
-		return DispatchEvent{Action: exitStatus}
+		return Event{Action: exitStatus}
 	}
 
 	event.FQDN = *deleteFQDN
@@ -58,7 +58,7 @@ func CLIDelete(event DispatchEvent) DispatchEvent {
 	return event
 }
 
-func CLIWorkflow(dispatchVersion string, event DispatchEvent) DispatchEvent {
+func CLIWorkflow(dispatchVersion string, event Event) Event {
 	action := os.Args[1]
 
 	switch action {
@@ -89,7 +89,7 @@ func CLIWorkflow(dispatchVersion string, event DispatchEvent) DispatchEvent {
 	return event
 }
 
-func TUIWorkflow(te TUIEventAPI, event DispatchEvent) DispatchEvent {
+func TUIWorkflow(te TUIEventAPI, event Event) Event {
 	action := te.getTUIAction()
 
 	switch action {
@@ -120,13 +120,13 @@ func TUIWorkflow(te TUIEventAPI, event DispatchEvent) DispatchEvent {
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 
-			return DispatchEvent{Action: exitStatus}
+			return Event{Action: exitStatus}
 		}
 
 	default:
 		fmt.Printf(" ! %s is not a valid Dispatch option\n", event.Action)
 
-		return DispatchEvent{Action: exitStatus}
+		return Event{Action: exitStatus}
 	}
 
 	return event

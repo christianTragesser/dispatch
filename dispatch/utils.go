@@ -13,6 +13,7 @@ func reportErr(err error, activity string) {
 	os.Exit(1)
 }
 
+/*
 func clusterExists(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -22,8 +23,9 @@ func clusterExists(s []string, str string) bool {
 
 	return false
 }
+*/
 
-func EnsureDependencies(event DispatchEvent) DispatchEvent {
+func EnsureDependencies(event Event) Event {
 	fmt.Print("\nEnsuring dependencies:\n")
 
 	event.User = ensureWorkspace()

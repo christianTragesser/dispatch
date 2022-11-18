@@ -29,7 +29,7 @@ func awsClientConfig() *aws.Config {
 
 	region, regionSet := os.LookupEnv("AWS_REGION")
 	if !regionSet {
-		region = "us-east-1"
+		region = defaultRegion
 	}
 
 	_, envarCredsSet := os.LookupEnv("AWS_ACCESS_KEY_ID")
@@ -138,7 +138,7 @@ func createStateBucket(clientConfig aws.Config, bucketName string) {
 		ACL:    "private",
 	}
 
-	if clientConfig.Region != "us-east-1" {
+	if clientConfig.Region != defaultRegion {
 		locationConfig := &s3types.
 			CreateBucketConfiguration{
 			LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region),
@@ -276,8 +276,7 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 	return s3Client.HeadObject(context.TODO(), input)
 }
 
-func setEKSConfig(clusterID string, FQDN string) {
-
+func setEKSConfig(clusterID string, fqdn string) {
 	home, homeSet := os.LookupEnv("HOME")
 	if !homeSet {
 		fmt.Println("$HOME not set")
@@ -286,10 +285,15 @@ func setEKSConfig(clusterID string, FQDN string) {
 	kubeconfigPath := filepath.Join(home, ".dispatch", ".kube", "config")
 	os.Setenv("KUBECONFIG", kubeconfigPath)
 
+	region, regionSet := os.LookupEnv("AWS_REGION")
+	if !regionSet {
+		region = defaultRegion
+	}
+
 	cmd := exec.Command(
-		"aws", "eks", "--region", "us-east-1",
+		"aws", "eks", "--region", region,
 		"update-kubeconfig", "--name", clusterID,
-		"--alias", FQDN,
+		"--alias", fqdn,
 	)
 
 	stdout, err := cmd.StdoutPipe()
