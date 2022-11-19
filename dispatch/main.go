@@ -3,6 +3,7 @@ package dispatch
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
@@ -44,7 +45,12 @@ func (e Event) tuiCreate() []string {
 }
 
 func (e Event) tuiDelete(clusters []map[string]string) string {
-	return tuidelete.SelectCluster(clusters)
+	selection := tuidelete.SelectCluster(clusters)
+	clusterName := strings.TrimPrefix(selection, pulumiStacksPath)
+	clusterName = strings.TrimSuffix(clusterName, "-eks.json")
+	clusterName = strings.ReplaceAll(clusterName, "-", ".")
+
+	return clusterName
 }
 
 func (e Event) getClusters(bucket string) []string {
