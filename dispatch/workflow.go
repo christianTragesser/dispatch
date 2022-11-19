@@ -118,6 +118,10 @@ func TUIWorkflow(te TUIEventAPI, event Event) Event {
 
 			event.Action = action
 			event.FQDN = te.tuiDelete(clusterList)
+
+			if event.FQDN == "" {
+				os.Exit(0)
+			}
 		} else {
 			fmt.Print(" . No existing clusters to delete\n")
 

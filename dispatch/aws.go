@@ -88,7 +88,7 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
-		reportErr(err, "list IAM users")
+		reportErr(err, "authenticate with AWS API")
 	}
 }
 
@@ -250,7 +250,7 @@ func listExistingClusters(bucket string) []string {
 
 	listConfig := &s3.ListObjectsV2Input{
 		Bucket: &bucket,
-		Prefix: aws.String(".pulumi/stacks/"),
+		Prefix: aws.String(pulumiStacksPath),
 	}
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
@@ -289,7 +289,7 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 
 	input := &s3.HeadObjectInput{
 		Bucket: &bucket,
-		Key:    aws.String(cluster + "/config"),
+		Key:    aws.String(cluster),
 	}
 
 	return s3Client.HeadObject(context.TODO(), input)
