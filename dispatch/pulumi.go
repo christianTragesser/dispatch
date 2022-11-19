@@ -94,6 +94,7 @@ func Exec(event Event) {
 
 		// Create a new EKS cluster
 		eksCluster, err := eks.NewCluster(ctx, eksID, &eks.ClusterArgs{
+			Version: pulumi.String(k8sVersion),
 			// Put the cluster in the new VPC created earlier
 			VpcId: eksVpc.VpcId,
 			// Public subnets will be used for load balancers

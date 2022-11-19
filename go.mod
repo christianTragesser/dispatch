@@ -15,7 +15,6 @@ require (
 	github.com/pulumi/pulumi-awsx/sdk v1.0.0-testplsignore.0
 	github.com/pulumi/pulumi-eks/sdk v0.42.7
 	github.com/pulumi/pulumi/sdk/v3 v3.46.1
-	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -104,6 +103,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/frand v1.4.2 // indirect
 	sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0 // indirect
 )

@@ -2,7 +2,7 @@ package dispatch
 
 import (
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
@@ -10,17 +10,18 @@ import (
 )
 
 const (
-	k8sVersion    string = "1.25.3"
-	pulumiVersion string = "3.46.1"
-	smallEC2      string = "t2.medium"
-	mediumEC2     string = "t2.xlarge"
-	largeEC2      string = "m4.2xlarge"
-	createAction  string = "create"
-	deleteAction  string = "delete"
-	notFound      string = "not found"
-	exitStatus    string = "exit"
-	defaultRegion string = "us-east-1"
-	defaultScale  int    = 2
+	k8sVersion       string = "1.24"
+	pulumiVersion    string = "3.46.1"
+	smallEC2         string = "t2.medium"
+	mediumEC2        string = "t2.xlarge"
+	largeEC2         string = "m4.2xlarge"
+	createAction     string = "create"
+	deleteAction     string = "delete"
+	notFound         string = "not found"
+	exitStatus       string = "exit"
+	defaultRegion    string = "us-east-1"
+	defaultScale     int    = 2
+	pulumiStacksPath string = ".pulumi/stacks/"
 )
 
 type Event struct {
@@ -69,7 +70,5 @@ func (e Event) ec2Type(sizeName string) (string, error) {
 
 func reportErr(err error, activity string) {
 	fmt.Printf(" ! Failed to %s\n\n", activity)
-	fmt.Print(err)
-	fmt.Print("\n")
-	os.Exit(1)
+	log.Fatalln(err)
 }
