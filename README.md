@@ -1,6 +1,6 @@
 # Dispatch  
 [![pipeline status](https://gitlab.com/christianTragesser/dispatch/badges/master/pipeline.svg)](https://gitlab.com/christianTragesser/dispatch/commits/master)  
-A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https://kubernetes.io/) in AWS. Dispatch simplifies secure management of relatively short-lived kubernetes clusters in AWS.
+A CLI utility for deploying [AWS EKS clusters](https://aws.amazon.com/eks/). Dispatch simplifies secure, scalable and resilient management of ephemeral kubernetes clusters in AWS.
 
 ### Dependencies
 * AWS credentials associated with the following IAM policies:
@@ -9,10 +9,11 @@ A CLI utility for deploying [KOPS](https://kops.sigs.k8s.io/) [Kubernetes](https
   - `AmazonS3FullAccess`
   - `IAMFullAccess`
   - `AmazonVPCFullAccess`
-* Docker (container image use only)
+  - `AmazonEKSFullAccess`
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) - Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
 
 
-#### AWS Authentication and Configuration
+#### AWS Profile and Authentication
 AWS credentials are configured using environment variables or AWS credentials file (`~/.aws/credentials`).  
 Environment variable settings take precedence over credential file configuration.
 
@@ -24,7 +25,9 @@ export AWS_PROFILE="my-profile"
 The following environment variables must be configured if the AWS credentials file is not used:
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
-  - `AWS_SESSION_TOKEN`([STS session](https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html))
+  - `AWS_SESSION_TOKEN`([STS session](https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html))  
+
+#### AWS Region
 
 `us-east-1` is supplied as the default AWS region.  To deploy in a different AWS region, set the environment variable `AWS_REGION` to the region name
 ```
@@ -77,13 +80,13 @@ Sessions can also be implemented via CLI subcommands
 $ dispatch create -h
 Usage of create:
   -fqdn string
-    	Cluster FQDN (default "dispatch.k8s.local")
+    	Cluster FQDN (default "")
   -nodes string
     	cluster node count (default "2")
   -size string
     	cluster node size (default "small")
   -version string
-    	Kubernetes version (default "1.21.9")
+    	Kubernetes version (default "1.24")
   -yolo
     	skip verification prompt for cluster creation
 ```
