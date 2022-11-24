@@ -22,6 +22,9 @@ import (
 func setPulumiEngine(bucket string) {
 	fmt.Println("\nPulumi login to S3 backend....")
 
+	region := setAWSRegion()
+	os.Setenv("AWS_REGION", region)
+
 	path, pathSet := os.LookupEnv("PATH")
 	if !pathSet {
 		fmt.Println("$PATH not set")
@@ -148,13 +151,10 @@ func Exec(event Event) {
 
 	err = w.InstallPlugin(ctx, "aws", "v4.0.0")
 	if err != nil {
-		reportErr(err, "install program plugins")
+		reportErr(err, "install pulumi plugins")
 	}
 
-	region, regionSet := os.LookupEnv("AWS_REGION")
-	if !regionSet {
-		region = "us-east-1"
-	}
+	region := setAWSRegion()
 
 	if err := s.SetConfig(ctx, "aws:region", auto.ConfigValue{Value: region}); err != nil {
 		reportErr(err, "set pulumi config")
@@ -168,9 +168,12 @@ func Exec(event Event) {
 	if !event.Verified {
 		var valid string
 
-		fmt.Printf(" Pulumi project: %s", projectID)
-		fmt.Printf("\n Pulumi stack: %s", stackID)
-		fmt.Printf("\n AWS region: %s\n", region)
+		fmt.Printf("\n Cluster FQDN: %s\n", event.FQDN)
+		fmt.Printf(" Cluster node size: %s\n", event.Size)
+		fmt.Printf(" Cluster node count: %s\n", event.Count)
+		fmt.Printf(" AWS region: %s\n", region)
+		fmt.Printf(" Pulumi project: %s\n", projectID)
+		fmt.Printf(" Pulumi stack: %s\n", stackID)
 
 		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.FQDN)
 		fmt.Scanf("%s", &valid)
@@ -225,6 +228,4 @@ func Exec(event Event) {
 	default:
 		fmt.Println("Unknown pulumi action.")
 	}
-
-	os.Exit(0)
 }

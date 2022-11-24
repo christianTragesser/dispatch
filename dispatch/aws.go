@@ -40,16 +40,22 @@ func getNodeSize(size string) (string, error) {
 	return ec2Instance, nil
 }
 
+func setAWSRegion() string {
+	region, regionSet := os.LookupEnv("AWS_REGION")
+	if !regionSet {
+		region = defaultRegion
+	}
+
+	return region
+}
+
 // create and configure AWS SDK client
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
 
 	var err error
 
-	region, regionSet := os.LookupEnv("AWS_REGION")
-	if !regionSet {
-		region = defaultRegion
-	}
+	region := setAWSRegion()
 
 	_, envarCredsSet := os.LookupEnv("AWS_ACCESS_KEY_ID")
 
@@ -304,10 +310,7 @@ func setEKSConfig(clusterID string, fqdn string) {
 	kubeconfigPath := filepath.Join(home, ".dispatch", ".kube", "config")
 	os.Setenv("KUBECONFIG", kubeconfigPath)
 
-	region, regionSet := os.LookupEnv("AWS_REGION")
-	if !regionSet {
-		region = defaultRegion
-	}
+	region := setAWSRegion()
 
 	cmd := exec.Command(
 		"aws", "eks", "--region", region,
