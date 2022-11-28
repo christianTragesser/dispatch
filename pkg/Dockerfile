@@ -16,7 +16,7 @@ WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
 RUN goreleaser build --snapshot
 
 FROM amazon/aws-cli AS publish
-COPY --from=build $GOPATH/src/github.com/christiantragesser/dispatch/dist/dispatch_linux_amd64_v1/dispatch-linux-amd64 /usr/local/bin/dispatch
+COPY --from=build /go/src/github.com/***/dispatch/dist/dispatch_linux_amd64_v1/dispatch-linux-amd64 /usr/local/bin/dispatch
 
 #install kubectl
 RUN KUBE_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) && \
