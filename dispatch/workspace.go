@@ -107,8 +107,7 @@ func removePreviousPulumiBins(binPath string) {
 
 	for _, v := range installedVersions {
 		if v.Name() != pulumiVersion {
-			fmt.Printf(" - removing version %s of omnibus pulumi", v.Name())
-			fmt.Println(filepath.Join(binPath, v.Name()))
+			fmt.Printf(" - removing version %s of omnibus pulumi\n", v.Name())
 
 			err := os.RemoveAll(filepath.Join(binPath, v.Name()))
 			if err != nil {
