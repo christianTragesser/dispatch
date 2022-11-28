@@ -111,7 +111,7 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 }
 
 // provide list of AWS region availability zones
-func getZones() string {
+func getAvailabilityZones() string {
 	var azs string
 
 	clientConfig := awsClientConfig()

@@ -17,8 +17,8 @@ type TUIEventAPI interface {
 
 func CLICreate(event *Event) Event {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createFQDN := createCommand.String("fqdn", "", "Cluster FQDN")
-	createSize := createCommand.String("size", "small", "cluster node Size")
+	createName := createCommand.String("name", "", "cluster name")
+	createSize := createCommand.String("size", "small", "cluster node size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
 	createYOLO := createCommand.Bool("yes", false, "skip verification prompt for cluster creation")
@@ -28,7 +28,7 @@ func CLICreate(event *Event) Event {
 		reportErr(err, " parse create command")
 	}
 
-	event.FQDN = *createFQDN
+	event.Name = *createName
 	event.Size = *createSize
 	event.Count = *nodeCount
 	event.Version = *createVersion
@@ -39,7 +39,7 @@ func CLICreate(event *Event) Event {
 
 func CLIDelete(event *Event) Event {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
-	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
+	deleteName := deleteCommand.String("name", "", "cluster name")
 	deleteYOLO := deleteCommand.Bool("yes", false, "skip verification prompt for cluster deletion")
 
 	err := deleteCommand.Parse(os.Args[2:])
@@ -47,13 +47,13 @@ func CLIDelete(event *Event) Event {
 		reportErr(err, " parse delete command")
 	}
 
-	if *deleteFQDN == "" {
+	if *deleteName == "" {
 		fmt.Print(" ! cluster FQDN is required\n\n")
 
 		return Event{Action: exitStatus}
 	}
 
-	event.FQDN = *deleteFQDN
+	event.Name = *deleteName
 	event.Verified = *deleteYOLO
 
 	return *event
@@ -98,7 +98,7 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 		createOptions := te.tuiCreate()
 
 		event.Action = action
-		event.FQDN = createOptions[0]
+		event.Name = createOptions[0]
 		event.Size = createOptions[1]
 		event.Count = createOptions[2]
 		event.Version = k8sVersion
@@ -117,9 +117,9 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 			}
 
 			event.Action = action
-			event.FQDN = te.tuiDelete(clusterList)
+			event.Name = te.tuiDelete(clusterList)
 
-			if event.FQDN == "" {
+			if event.Name == "" {
 				os.Exit(0)
 			}
 		} else {
@@ -138,7 +138,7 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 }
 
 func clusterExists(event Event) bool {
-	stackID := strings.ReplaceAll(event.FQDN, ".", "-") + "-eks"
+	stackID := strings.ReplaceAll(event.Name, ".", "-") + "-eks"
 
 	clusters := listExistingClusters(event.Bucket)
 

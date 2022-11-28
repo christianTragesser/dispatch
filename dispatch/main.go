@@ -29,7 +29,7 @@ type Event struct {
 	Action   string
 	Bucket   string
 	Count    string
-	FQDN     string
+	Name     string
 	Size     string
 	User     string
 	Version  string
@@ -67,7 +67,7 @@ func (e Event) getClusterCreationDate(bucket string, cluster string) string {
 }
 
 func (e Event) vpcZones() string {
-	return getZones()
+	return getAvailabilityZones()
 }
 
 func (e Event) ec2Type(sizeName string) (string, error) {

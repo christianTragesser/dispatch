@@ -64,7 +64,7 @@ func setPulumiEngine(bucket string) {
 func Exec(event *Event) {
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
-		eksID := strings.ReplaceAll(event.FQDN, ".", "-")
+		eksID := strings.ReplaceAll(event.Name, ".", "-")
 
 		// Set cluster values
 		minClusterSize, err := strconv.Atoi(event.Count)
@@ -129,7 +129,7 @@ func Exec(event *Event) {
 
 	if event.Action == deleteAction {
 		if !clusterExists(*event) {
-			fmt.Printf("\n %s was not found, exiting.\n\n", event.FQDN)
+			fmt.Printf("\n %s was not found, exiting.\n\n", event.Name)
 			os.Exit(0)
 		}
 	}
@@ -140,7 +140,7 @@ func Exec(event *Event) {
 	ctx := context.Background()
 
 	projectID := event.User + "-eks"
-	stackID := strings.ReplaceAll(event.FQDN, ".", "-") + "-eks"
+	stackID := strings.ReplaceAll(event.Name, ".", "-") + "-eks"
 
 	s, err := auto.UpsertStackInlineSource(ctx, stackID, projectID, deploy)
 	if err != nil {
@@ -168,14 +168,14 @@ func Exec(event *Event) {
 	if !event.Verified {
 		var valid string
 
-		fmt.Printf("\n Cluster FQDN: %s\n", event.FQDN)
+		fmt.Printf("\n Cluster name: %s\n", event.Name)
 		fmt.Printf(" Cluster node size: %s\n", event.Size)
 		fmt.Printf(" Cluster node count: %s\n", event.Count)
 		fmt.Printf(" AWS region: %s\n", region)
 		fmt.Printf(" Pulumi project: %s\n", projectID)
 		fmt.Printf(" Pulumi stack: %s\n", stackID)
 
-		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.FQDN)
+		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.Name)
 		fmt.Scanf("%s", &valid)
 
 		if valid != "Y" && valid != "y" {
@@ -205,7 +205,7 @@ func Exec(event *Event) {
 			}
 		}
 
-		setEKSConfig(cluster["id"], event.FQDN)
+		setEKSConfig(cluster["id"], event.Name)
 	case "delete":
 		fmt.Println("Starting stack destroy")
 
