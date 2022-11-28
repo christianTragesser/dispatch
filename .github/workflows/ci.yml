@@ -58,7 +58,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: "."
+          context: .
           file: "./pkg/Dockerfile"
           push: true
           tags: christiantragesser/dispatch:${{ steps.vars.outputs.sha_short }},christiantragesser/dispatch:latest
