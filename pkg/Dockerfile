@@ -5,6 +5,7 @@ ADD go.mod .
 ADD go.sum .
 ADD main.go .
 ADD .goreleaser.yaml .
+COPY .git ./.git
 COPY dispatch ./dispatch
 COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
