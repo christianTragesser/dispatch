@@ -260,7 +260,7 @@ func ensureWorkspace() string {
 	return dispatchUID
 }
 
-func EnsureDependencies(event Event) Event {
+func EnsureDependencies(event *Event) Event {
 	fmt.Print("\nEnsuring dependencies:\n")
 
 	event.User = ensureWorkspace()
@@ -273,5 +273,5 @@ func EnsureDependencies(event Event) Event {
 
 	printExistingClusters(event.Bucket)
 
-	return event
+	return *event
 }

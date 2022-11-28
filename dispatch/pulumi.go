@@ -61,7 +61,7 @@ func setPulumiEngine(bucket string) {
 	fmt.Printf("%s\n", string(data))
 }
 
-func Exec(event Event) {
+func Exec(event *Event) {
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
 		eksID := strings.ReplaceAll(event.FQDN, ".", "-")
@@ -128,7 +128,7 @@ func Exec(event Event) {
 	}
 
 	if event.Action == deleteAction {
-		if !clusterExists(event) {
+		if !clusterExists(*event) {
 			fmt.Printf("\n %s was not found, exiting.\n\n", event.FQDN)
 			os.Exit(0)
 		}

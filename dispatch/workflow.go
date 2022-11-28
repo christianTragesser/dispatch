@@ -15,13 +15,13 @@ type TUIEventAPI interface {
 	getClusterCreationDate(Bucket string, cluster string) string
 }
 
-func CLICreate(event Event) Event {
+func CLICreate(event *Event) Event {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createFQDN := createCommand.String("fqdn", "", "Cluster FQDN")
 	createSize := createCommand.String("size", "small", "cluster node Size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
 	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
-	createYOLO := createCommand.Bool("yolo", false, "skip verification prompt for cluster creation")
+	createYOLO := createCommand.Bool("yes", false, "skip verification prompt for cluster creation")
 
 	err := createCommand.Parse(os.Args[2:])
 	if err != nil {
@@ -34,13 +34,13 @@ func CLICreate(event Event) Event {
 	event.Version = *createVersion
 	event.Verified = *createYOLO
 
-	return event
+	return *event
 }
 
-func CLIDelete(event Event) Event {
+func CLIDelete(event *Event) Event {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteFQDN := deleteCommand.String("fqdn", "", "Cluster FQDN")
-	deleteYOLO := deleteCommand.Bool("yolo", false, "skip verification prompt for cluster deletion")
+	deleteYOLO := deleteCommand.Bool("yes", false, "skip verification prompt for cluster deletion")
 
 	err := deleteCommand.Parse(os.Args[2:])
 	if err != nil {
@@ -56,23 +56,23 @@ func CLIDelete(event Event) Event {
 	event.FQDN = *deleteFQDN
 	event.Verified = *deleteYOLO
 
-	return event
+	return *event
 }
 
-func CLIWorkflow(dispatchVersion string, event Event) Event {
+func CLIWorkflow(dispatchVersion string, event *Event) Event {
 	action := os.Args[1]
 
 	switch action {
-	case "Version":
+	case "version", "-v":
 		fmt.Printf("Dispatch Version %s\n", dispatchVersion)
 
 		event.Action = exitStatus
 	case "create":
-		event = CLICreate(event)
+		*event = CLICreate(event)
 		event.Action = action
 
 	case "delete":
-		event = CLIDelete(event)
+		*event = CLIDelete(event)
 		event.Action = action
 
 	case "-h":
@@ -87,10 +87,10 @@ func CLIWorkflow(dispatchVersion string, event Event) Event {
 		event.Action = exitStatus
 	}
 
-	return event
+	return *event
 }
 
-func TUIWorkflow(te TUIEventAPI, event Event) Event {
+func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 	action := te.getTUIAction()
 
 	switch action {
@@ -134,7 +134,7 @@ func TUIWorkflow(te TUIEventAPI, event Event) Event {
 		return Event{Action: exitStatus}
 	}
 
-	return event
+	return *event
 }
 
 func clusterExists(event Event) bool {

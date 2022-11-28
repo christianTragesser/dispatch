@@ -36,7 +36,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.9.0 // indirect
 	github.com/aws/smithy-go v1.10.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/cheggaaa/pb v1.0.18 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/djherbis/times v1.2.0 // indirect
