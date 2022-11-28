@@ -11,10 +11,11 @@ A CLI utility for deploying [AWS EKS clusters](https://aws.amazon.com/eks/). Dis
   - `AmazonVPCFullAccess`
   - `AmazonEKSFullAccess`
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) - Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
+* [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 
 
 #### AWS Profile and Authentication
-AWS credentials are configured using environment variables or AWS credentials file (`~/.aws/credentials`).  
+AWS authentication and authorization are configured using environment variables or AWS credentials file (`~/.aws/credentials`).  
 Environment variable settings take precedence over credential file configuration.
 
 To use an AWS profile other than `default` in your AWS credentials file, set the environment variable `AWS_PROFILE` to the profile name
@@ -50,31 +51,33 @@ Download the binary and place in a directory located in your system `$PATH`
 #### Container Image
 [christiantragesser/dispatch](https://hub.docker.com/repository/docker/christiantragesser/dispatch)
 
+The container image provides a temporary runtime with all Dispatch dependencies.  
+
 ### Use
-Run `dispatch` to start a session (preferred)
+Run `dispatch` to start a provisioning event
 ```
 $ dispatch
 ```
 
+Ephemeral Dispatch runtime using docker
+```
+$ docker run --rm -it christiantragesser/dispatch
+# export AWS_ACCESS_KEY_ID=....
+# export AWS_SECRET_ACCESS_KEY=....
+# export AWS_SESSION_TOKEN=....
+# dispatch
+```
+
 With Docker using the AWS credentials file
 ```
-docker run --rm -it -v $HOME:/root christiantragesser/dispatch
+$ docker run --rm -it -v $HOME:/root christiantragesser/dispatch
+# dispatch
 ```
 
-With Docker using AWS environment variables
-```
-docker run --rm -it \
-       -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-       -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-       -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-       -v $HOME:/root \
-       christiantragesser/dispatch
-```
-
-Your home directory must be mounted to the container's `/root` directory when using the container image.
+Providing a local mount to the container's `/root` directory allows for the persistence of Dispatch event and kubeconfig files.
 
 ### CLI Arguments
-Sessions can also be implemented via CLI subcommands
+Events can be configured via CLI subcommands
 #### Create
 ```
 $ dispatch create -h
@@ -87,11 +90,11 @@ Usage of create:
     	cluster node size (default "small")
   -version string
     	Kubernetes version (default "1.24")
-  -yolo
+  -yes
     	skip verification prompt for cluster creation
 ```
 ```
-$ dispatch -name my-cluster.k8s.local -nodes 10 -size large -yolo true
+$ dispatch -name my-cluster.k8s.local -nodes 10 -size large -yes
 ```
 #### Delete
 ```
@@ -99,20 +102,9 @@ $ dispatch delete -h
 Usage of delete:
   -fqdn string
     	Cluster FQDN
-  -yolo
+  -yes
     	skip verification prompt for cluster deletion
 ```
 ```
 $ dispatch delete -name my-cluster.k8s.local
 ```
-
-#### Docker CLI Arguments
-```
-docker run --rm -it -v $HOME:/root christiantragesser/dispatch \
-       dispatch create -name my-cluster.k8s.local -nodes 10 -size large
-```
-
-### Cluster Fully Qualified Domain Name (FQDN)
-The simplest way to provision a cluster is using a cluster FQDN which ends in `.k8s.local`. See [kOps gossip dns](https://kops.sigs.k8s.io/gossip/) for more details.  
-
-If you desire a publically resolvable cluster domain, the FQDN must use [AWS Route 53](https://aws.amazon.com/route53/) as its authoritative DNS servers and cluster resources must be provisioned in the appropriate AWS region.
