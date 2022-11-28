@@ -1,21 +1,22 @@
 # Dispatch  
-[![pipeline status](https://gitlab.com/christianTragesser/dispatch/badges/master/pipeline.svg)](https://gitlab.com/christianTragesser/dispatch/commits/master)  
-A CLI utility for deploying [AWS EKS clusters](https://aws.amazon.com/eks/). Dispatch simplifies secure, scalable and resilient management of ephemeral kubernetes clusters in AWS.
+![CI](https://github.com/christianTragesser/dispatch/actions/workflows/ci.yml/badge.svg) ![Release](https://github.com/christianTragesser/dispatch/actions/workflows/release.yml/badge.svg)  
+A CLI utility for deploying [AWS EKS clusters](https://aws.amazon.com/eks/).  
+Dispatch simplifies secure, scalable and resilient management of ephemeral kubernetes clusters in AWS.  
+
 
 ### Dependencies
 * AWS credentials associated with the following IAM policies:
   - `AmazonEC2FullAccess`
-  - `AmazonRoute53FullAccess`
   - `AmazonS3FullAccess`
   - `IAMFullAccess`
   - `AmazonVPCFullAccess`
-  - `AmazonEKSFullAccess`
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) - Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) - Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  
+The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 
 
-#### AWS Profile and Authentication
-AWS authentication and authorization are configured using environment variables or AWS credentials file (`~/.aws/credentials`).  
+#### AWS Authentication
+AWS authentication is performed using environment variables or AWS credentials file (`~/.aws/credentials`).  
 Environment variable settings take precedence over credential file configuration.
 
 To use an AWS profile other than `default` in your AWS credentials file, set the environment variable `AWS_PROFILE` to the profile name
@@ -82,8 +83,8 @@ Events can be configured via CLI subcommands
 ```
 $ dispatch create -h
 Usage of create:
-  -fqdn string
-    	Cluster FQDN (default "")
+  -name string
+    	cluster name (default "")
   -nodes string
     	cluster node count (default "2")
   -size string
@@ -94,17 +95,17 @@ Usage of create:
     	skip verification prompt for cluster creation
 ```
 ```
-$ dispatch -name my-cluster.k8s.local -nodes 10 -size large -yes
+$ dispatch -name my-cluster -nodes 10 -size large -yes
 ```
 #### Delete
 ```
 $ dispatch delete -h
 Usage of delete:
-  -fqdn string
-    	Cluster FQDN
+  -name string
+    	cluster name
   -yes
     	skip verification prompt for cluster deletion
 ```
 ```
-$ dispatch delete -name my-cluster.k8s.local
+$ dispatch delete -name my-cluster
 ```
