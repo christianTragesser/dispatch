@@ -218,9 +218,9 @@ func Exec(event *Event) {
 			fmt.Printf("Failed to destroy stack: %v", err)
 		}
 
-		fmt.Println("Stack successfully destroyed")
+		fmt.Println("\nStack successfully destroyed")
 
-		fmt.Printf("Removing %s stack history and configuration.\n", stackID)
+		fmt.Printf(" - Deleting %s stack configuration from state backend.\n", stackID)
 
 		if err := w.RemoveStack(ctx, stackID); err != nil {
 			reportErr(err, "remove stack")
