@@ -1,18 +1,17 @@
 package dispatch
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
-	"golang.org/x/crypto/ssh"
 	"sigs.k8s.io/yaml"
 )
 
@@ -21,63 +20,16 @@ const privMode int = 0600
 const pubMode int = 0644
 
 type workspace struct {
-	root, ssh, kube   string
-	binPath, kopsPath string
+	root       string
+	kube       string
+	binPath    string
+	pulumiPath string
 }
 
 func ensureDir(path string) {
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		reportErr(err, "creating dispatch workspace")
-	}
-}
-
-func ensureRSAKeys(sshDir string) {
-	keyFile := sshDir + "/kops_rsa"
-	bitSize := 4096
-
-	ensureDir(sshDir)
-
-	_, err := os.Stat(keyFile)
-
-	if os.IsNotExist(err) {
-		fmt.Printf(" + Creating RSA key %s for KOPS\n", keyFile)
-		// Create private RSA key in PEM format
-		key, err := rsa.GenerateKey(rand.Reader, bitSize)
-		if err != nil {
-			reportErr(err, "create RSA key")
-		}
-
-		err = key.Validate()
-		if err != nil {
-			reportErr(err, "validate private key")
-		}
-
-		keyPEM := pem.EncodeToMemory(
-			&pem.Block{
-				Type:  "RSA PRIVATE KEY",
-				Bytes: x509.MarshalPKCS1PrivateKey(key),
-			},
-		)
-
-		// Create ssh-rsa public key
-		pubRSAKey, err := ssh.NewPublicKey(&key.PublicKey)
-		if err != nil {
-			reportErr(err, "create public RSA key")
-		}
-
-		pubKeyBytes := ssh.MarshalAuthorizedKey(pubRSAKey)
-
-		// Write RSA key pair to disk
-		if err := os.WriteFile(keyFile, keyPEM, fs.FileMode(privMode)); err != nil {
-			reportErr(err, "save private key")
-		}
-
-		if err := os.WriteFile(keyFile+".pub", pubKeyBytes, fs.FileMode(pubMode)); err != nil {
-			reportErr(err, "save public key")
-		}
-	} else {
-		fmt.Printf(" . Found %s RSA private key\n", keyFile)
 	}
 }
 
@@ -145,65 +97,138 @@ func ensureDispatchConfig(dispatchDir string) string {
 	return dispatchUID
 }
 
-func removePreviousKopsBins(binPath string) {
+func removePreviousPulumiBins(binPath string) {
 	const preferredVersions = 1
 
 	installedVersions, err := os.ReadDir(binPath)
 	if err != nil {
-		reportErr(err, "list kOps binary directory")
+		reportErr(err, "list pulumi binary directory")
 	}
 
-	if len(installedVersions) > preferredVersions {
-		fmt.Println(" ^ kOps version update required")
+	for _, v := range installedVersions {
+		if v.Name() != pulumiVersion {
+			fmt.Printf(" - removing version %s of omnibus pulumi\n", v.Name())
 
-		for _, v := range installedVersions {
-			if v.Name() != kopsVersion {
-				err := os.RemoveAll(binPath + v.Name())
-				if err != nil {
-					reportErr(err, "delete previous kOps binary")
-				}
+			err := os.RemoveAll(filepath.Join(binPath, v.Name()))
+			if err != nil {
+				reportErr(err, "delete previous pulumi binary")
 			}
 		}
 	}
 }
 
-func ensureKOPS(workDir workspace) {
-	kopsDLPath := "https://github.com/kubernetes/kops/releases/download/v"
-	kopsURL := kopsDLPath + kopsVersion + "/kops-" + runtime.GOOS + "-" + runtime.GOARCH
-	kopsBin := workDir.kopsPath + "/kops"
+func extractTarGz(archivePath string) {
+	fileStream, err := os.Open(archivePath)
+	if err != nil {
+		reportErr(err, "open archive file")
+	}
 
-	ensureDir(workDir.kopsPath)
-	removePreviousKopsBins(workDir.binPath)
+	tarStream, err := gzip.NewReader(fileStream)
+	if err != nil {
+		reportErr(err, "decompress gzip file")
+	}
+	defer tarStream.Close()
 
-	_, err := os.Stat(kopsBin)
+	tarReader := tar.NewReader(tarStream)
 
-	if os.IsNotExist(err) {
-		fmt.Printf(" + Downloading kOps v%s\n", kopsVersion)
+	// use archive path to set extraction location
+	destinationSplit := strings.Split(archivePath, "/")
+	artifactName := destinationSplit[len(destinationSplit)-1]
 
-		resp, err := http.Get(kopsURL)
+	if len(destinationSplit) > 0 {
+		destinationSplit = destinationSplit[:len(destinationSplit)-1]
+	}
+
+	destinationPath := strings.Join(destinationSplit, "/")
+
+	extractDir := filepath.Join(destinationPath, strings.Split(artifactName, "-")[0])
+
+	if _, err := os.Stat(extractDir); err != nil {
+		if err := os.Mkdir(extractDir, fs.FileMode(binMode)); err != nil {
+			reportErr(err, "create extraction directory")
+		}
+	}
+
+	for {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
 
 		if err != nil {
-			reportErr(err, "download kOps")
+			reportErr(err, "untar archive file")
+		}
+
+		if header == nil {
+			continue
+		}
+
+		destinationTarget := filepath.Join(destinationPath, header.Name) // #nosec
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := os.Stat(destinationTarget); err != nil {
+				if err := os.Mkdir(destinationTarget, fs.FileMode(binMode)); err != nil {
+					reportErr(err, "create archive directory")
+				}
+			}
+		case tar.TypeReg:
+			f, err := os.OpenFile(destinationTarget, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
+			if err != nil {
+				reportErr(err, "open archive file destination")
+			}
+
+			if _, err := io.Copy(f, tarReader); err != nil {
+				reportErr(err, "copy archive file contents")
+			} // #nosec
+
+			f.Close()
+		default:
+			reportErr(nil, "unknown type archive type")
+		}
+	}
+}
+
+func ensurePulumi(workDir workspace) {
+	// it appears there isn't a pulumi binary for ARM?
+	baseURL := "https://github.com/pulumi/pulumi/releases/download/v" + pulumiVersion + "/"
+	artifactFile := "pulumi-v" + pulumiVersion + "-" + runtime.GOOS + "-x64.tar.gz"
+	tarURL := baseURL + artifactFile
+
+	ensureDir(workDir.pulumiPath)
+	removePreviousPulumiBins(workDir.binPath)
+
+	// check for omnibus install of pulumi
+	_, err := os.Stat(filepath.Join(workDir.pulumiPath, "pulumi", "pulumi"))
+
+	if os.IsNotExist(err) {
+		fmt.Printf(" + Installing omnibus pulumi version %s\n", pulumiVersion)
+
+		// create destination .tar.gz file
+		tarGz, err := os.Create(workDir.pulumiPath + "/" + artifactFile)
+		if err != nil {
+			reportErr(err, "create pulumi artifact")
+		}
+		defer tarGz.Close()
+
+		// download pulumi release artifact
+		resp, err := http.Get(tarURL)
+		if err != nil {
+			reportErr(err, "download pulumi artifact")
 		}
 		defer resp.Body.Close()
 
-		fileHandle, err := os.OpenFile(kopsBin, os.O_CREATE|os.O_APPEND|os.O_RDWR, fs.FileMode(pubMode))
+		// write artifact archive file to destination file
+		_, err = io.Copy(tarGz, resp.Body)
 		if err != nil {
-			reportErr(err, "buffer kOps download")
-		}
-		defer fileHandle.Close()
-
-		_, err = io.Copy(fileHandle, resp.Body)
-		if err != nil {
-			reportErr(err, "save kOps binary")
+			reportErr(err, "save pulumi artifact")
 		}
 
-		err = os.Chmod(kopsBin, fs.FileMode(binMode))
-		if err != nil {
-			reportErr(err, "set file permissions for kOps binary")
-		}
+		// extract pulumi archive file
+		extractTarGz(filepath.Join(workDir.pulumiPath, artifactFile))
 	} else {
-		fmt.Printf(" . Found kOps at %s\n", kopsBin)
+		fmt.Printf(" . Found pulumi at %s\n", workDir.pulumiPath)
 	}
 }
 
@@ -213,20 +238,18 @@ func ensureWorkspace() string {
 	home, homeSet := os.LookupEnv("HOME")
 
 	if homeSet {
-		dispatchDir := home + "/.dispatch"
+		dispatchDir := filepath.Join(home, ".dispatch")
 
 		sessionDirs := workspace{
-			root:     dispatchDir,
-			ssh:      dispatchDir + "/.ssh",
-			kube:     dispatchDir + "/.kube",
-			binPath:  dispatchDir + "/bin/",
-			kopsPath: dispatchDir + "/bin/" + kopsVersion + "/" + runtime.GOOS,
+			root:       dispatchDir,
+			kube:       filepath.Join(dispatchDir, ".kube"),
+			binPath:    filepath.Join(dispatchDir, "bin", "pulumi"),
+			pulumiPath: filepath.Join(dispatchDir, "bin", "pulumi", pulumiVersion, runtime.GOOS),
 		}
 
 		ensureDir(sessionDirs.root)
-		ensureRSAKeys(sessionDirs.ssh)
 		ensureKubeConfig(sessionDirs.kube)
-		ensureKOPS(sessionDirs)
+		ensurePulumi(sessionDirs)
 		dispatchUID = ensureDispatchConfig(sessionDirs.root)
 	} else {
 		fmt.Print("$HOME environment variable not found, exiting.\n")
@@ -234,4 +257,20 @@ func ensureWorkspace() string {
 	}
 
 	return dispatchUID
+}
+
+func EnsureDependencies(event *Event) Event {
+	fmt.Print("\nEnsuring dependencies:\n")
+
+	event.User = ensureWorkspace()
+
+	clientConfig := awsClientConfig()
+
+	testAWSCreds(*clientConfig)
+
+	event.Bucket = ensureS3Bucket(*clientConfig, event.User)
+
+	printExistingClusters(event.Bucket)
+
+	return *event
 }

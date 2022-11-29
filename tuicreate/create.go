@@ -13,12 +13,10 @@ import (
 var eventOptions []string
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle.Copy()
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle.Copy()
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle  = focusedStyle.Copy()
+	noStyle      = lipgloss.NewStyle()
 
 	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
@@ -43,7 +41,7 @@ func initialModel() model {
 
 		switch i {
 		case 0:
-			t.Placeholder = "cluster FQDN (default: dispatch.k8s.local)"
+			t.Placeholder = "cluster name"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
@@ -77,7 +75,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
 			if s == "enter" && m.focusIndex == len(m.inputs) {
-
 				for i := range m.inputs {
 					eventOptions = append(eventOptions, m.inputs[i].Value())
 				}
@@ -99,6 +96,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			cmds := make([]tea.Cmd, len(m.inputs))
+
 			for i := 0; i <= len(m.inputs)-1; i++ {
 				if i == m.focusIndex {
 					// Set focused state
@@ -140,6 +138,7 @@ func (m model) View() string {
 
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
+
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
 		}
@@ -149,6 +148,7 @@ func (m model) View() string {
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton
 	}
+
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
 	return b.String()
@@ -162,10 +162,6 @@ func Create() []string {
 
 	if len(eventOptions) == 0 {
 		os.Exit(0)
-	}
-
-	if eventOptions[0] == "" {
-		eventOptions[0] = "dispatch.k8s.local"
 	}
 
 	if eventOptions[1] == "" {

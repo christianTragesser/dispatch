@@ -5,7 +5,10 @@ package dispatch
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -18,16 +21,41 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+func getNodeSize(size string) (string, error) {
+	var ec2Instance string
+
+	nodeSize := strings.ToUpper(size)
+
+	switch nodeSize {
+	case "SMALL", "S":
+		ec2Instance = smallEC2
+	case "MEDIUM", "M":
+		ec2Instance = mediumEC2
+	case "LARGE", "L":
+		ec2Instance = largeEC2
+	default:
+		return "", fmt.Errorf("invalid node size: %s", size)
+	}
+
+	return ec2Instance, nil
+}
+
+func setAWSRegion() string {
+	region, regionSet := os.LookupEnv("AWS_REGION")
+	if !regionSet {
+		region = defaultRegion
+	}
+
+	return region
+}
+
 // create and configure AWS SDK client
 func awsClientConfig() *aws.Config {
 	var cfg aws.Config
 
 	var err error
 
-	region, regionSet := os.LookupEnv("AWS_REGION")
-	if !regionSet {
-		region = "us-east-1"
-	}
+	region := setAWSRegion()
 
 	_, envarCredsSet := os.LookupEnv("AWS_ACCESS_KEY_ID")
 
@@ -66,7 +94,7 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
-		reportErr(err, "list IAM users")
+		reportErr(err, "authenticate with AWS API")
 	}
 }
 
@@ -83,7 +111,7 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 }
 
 // provide list of AWS region availability zones
-func getZones() string {
+func getAvailabilityZones() string {
 	var azs string
 
 	clientConfig := awsClientConfig()
@@ -125,17 +153,17 @@ func getAccountNumber() string {
 	return *response.Account
 }
 
-// create S3 bucket for kops cluster state
-func createKOPSBucket(clientConfig aws.Config, bucketName string) {
+// create S3 bucket for provisioning state
+func createStateBucket(clientConfig aws.Config, bucketName string) {
 	s3Client := s3.NewFromConfig(clientConfig)
 
-	// create private KOPS bucket
+	// create private bucket
 	createSettings := &s3.CreateBucketInput{
 		Bucket: &bucketName,
 		ACL:    "private",
 	}
 
-	if clientConfig.Region != "us-east-1" {
+	if clientConfig.Region != defaultRegion {
 		locationConfig := &s3types.
 			CreateBucketConfiguration{
 			LocationConstraint: s3types.BucketLocationConstraint(clientConfig.Region),
@@ -187,13 +215,13 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 
 	accountNumber := getAccountNumber()
 
-	kopsBucket := user + "-dispatch-kops-state-store-" + accountNumber
+	kopsBucket := user + "-dispatch-state-store-" + accountNumber
 
 	buckets := getS3Buckets(clientConfig)
 
 	for i := range buckets.Buckets {
 		if *buckets.Buckets[i].Name == kopsBucket {
-			fmt.Printf(" . Using s3://%s for KOPS state\n", kopsBucket)
+			fmt.Printf(" . Using s3://%s for provisioning state store\n", kopsBucket)
 
 			bucketExists = true
 
@@ -204,12 +232,12 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	if !bucketExists {
 		var createBucket string
 
-		fmt.Printf(" ! S3 bucket %s for KOPS state doesn't exists\n", kopsBucket)
+		fmt.Printf(" ! S3 bucket %s for stack state does not exists\n", kopsBucket)
 		fmt.Printf("\n ? Create S3 bucket %s (y/n): ", kopsBucket)
 		fmt.Scanf("%s", &createBucket)
 
 		if createBucket == "y" || createBucket == "Y" {
-			createKOPSBucket(clientConfig, kopsBucket)
+			createStateBucket(clientConfig, kopsBucket)
 		} else {
 			fmt.Print("\n S3 bucket is required for cluster provisioning, exiting.\n\n")
 			os.Exit(0)
@@ -227,8 +255,8 @@ func listExistingClusters(bucket string) []string {
 	s3Client := s3.NewFromConfig(*clientConfig)
 
 	listConfig := &s3.ListObjectsV2Input{
-		Bucket:    &bucket,
-		Delimiter: aws.String("/"),
+		Bucket: &bucket,
+		Prefix: aws.String(pulumiStacksPath),
 	}
 
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
@@ -236,9 +264,11 @@ func listExistingClusters(bucket string) []string {
 		reportErr(err, "list S3 items in KOPS state store")
 	}
 
-	if len(objects.CommonPrefixes) > 0 {
-		for _, item := range objects.CommonPrefixes {
-			clusters = append(clusters, strings.Trim(*item.Prefix, "/"))
+	if len(objects.Contents) > 0 {
+		for _, item := range objects.Contents {
+			if !strings.Contains(*item.Key, ".bak") {
+				clusters = append(clusters, *item.Key)
+			}
 		}
 	}
 
@@ -249,7 +279,7 @@ func printExistingClusters(bucket string) {
 	clusters := listExistingClusters(bucket)
 
 	if len(clusters) > 0 {
-		fmt.Print(" - Found existing KOPS clusters:\n")
+		fmt.Print(" - Existing stack configurations:\n")
 
 		for _, item := range clusters {
 			fmt.Printf("\t <> %s \n", item)
@@ -265,8 +295,49 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 
 	input := &s3.HeadObjectInput{
 		Bucket: &bucket,
-		Key:    aws.String(cluster + "/config"),
+		Key:    aws.String(cluster),
 	}
 
 	return s3Client.HeadObject(context.TODO(), input)
+}
+
+func setEKSConfig(clusterID string, fqdn string) {
+	home, homeSet := os.LookupEnv("HOME")
+	if !homeSet {
+		fmt.Println("$HOME not set")
+	}
+
+	kubeconfigPath := filepath.Join(home, ".dispatch", ".kube", "config")
+	os.Setenv("KUBECONFIG", kubeconfigPath)
+
+	region := setAWSRegion()
+
+	cmd := exec.Command(
+		"aws", "eks", "--region", region,
+		"update-kubeconfig", "--name", clusterID,
+		"--alias", fqdn,
+	)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		reportErr(err, "display aws eks cmd stdout")
+	}
+
+	if err := cmd.Start(); err != nil {
+		reportErr(err, "start aws eks update")
+	}
+
+	data, err := io.ReadAll(stdout)
+	if err != nil {
+		reportErr(err, "read aws eks stdout")
+	}
+
+	if err := cmd.Wait(); err != nil {
+		reportErr(err, "update kubeconfig")
+	}
+
+	fmt.Println(string(data))
+
+	fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", fqdn)
+	fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeconfigPath)
 }
