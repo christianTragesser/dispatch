@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -28,11 +29,13 @@ func CLICreate(event *Event) Event {
 		reportErr(err, " parse create command")
 	}
 
-	event.Name = *createName
+	event.Name = strings.ToLower(*createName)
 	event.Size = *createSize
 	event.Count = *nodeCount
 	event.Version = *createVersion
 	event.Verified = *createYOLO
+
+	validateClusterName(event.Name)
 
 	return *event
 }
@@ -48,13 +51,13 @@ func CLIDelete(event *Event) Event {
 	}
 
 	if *deleteName == "" {
-		fmt.Print(" ! cluster FQDN is required\n\n")
-
-		return Event{Action: exitStatus}
+		reportErr(fmt.Errorf("-name flag required for delete events"), "determine cluster name")
 	}
 
-	event.Name = *deleteName
+	event.Name = strings.ToLower(*deleteName)
 	event.Verified = *deleteYOLO
+
+	validateClusterName(event.Name)
 
 	return *event
 }
@@ -149,4 +152,12 @@ func clusterExists(event Event) bool {
 	}
 
 	return false
+}
+
+func validateClusterName(name string) {
+	valid := regexp.MustCompile(`^[a-z0-9]+(?:[.-][a-z0-9]+)*$`).MatchString(name)
+
+	if !valid {
+		reportErr(fmt.Errorf("cluster name '%s' is invalid ([a-zA-Z0-9][.-])", name), "set cluster name")
+	}
 }

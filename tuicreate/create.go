@@ -138,6 +138,7 @@ func (m model) View() string {
 
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
+
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
 		}
@@ -147,6 +148,7 @@ func (m model) View() string {
 	if m.focusIndex == len(m.inputs) {
 		button = &focusedButton
 	}
+
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
 	return b.String()
@@ -160,10 +162,6 @@ func Create() []string {
 
 	if len(eventOptions) == 0 {
 		os.Exit(0)
-	}
-
-	if eventOptions[0] == "" {
-		eventOptions[0] = "dispatch.k8s.local"
 	}
 
 	if eventOptions[1] == "" {

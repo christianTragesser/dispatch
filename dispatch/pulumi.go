@@ -166,19 +166,23 @@ func Exec(event *Event) {
 	}
 
 	if !event.Verified {
-		var valid string
+		var approve string
 
 		fmt.Printf("\n Cluster name: %s\n", event.Name)
-		fmt.Printf(" Cluster node size: %s\n", event.Size)
-		fmt.Printf(" Cluster node count: %s\n", event.Count)
+
+		if event.Action == createAction {
+			fmt.Printf(" Cluster node size: %s\n", event.Size)
+			fmt.Printf(" Cluster node count: %s\n", event.Count)
+		}
+
 		fmt.Printf(" AWS region: %s\n", region)
 		fmt.Printf(" Pulumi project: %s\n", projectID)
 		fmt.Printf(" Pulumi stack: %s\n", stackID)
 
 		fmt.Printf("\n ? %s cluster %s (y/n): ", event.Action, event.Name)
-		fmt.Scanf("%s", &valid)
+		fmt.Scanf("%s", &approve)
 
-		if valid != "Y" && valid != "y" {
+		if approve != "Y" && approve != "y" {
 			os.Exit(0)
 		}
 	}
