@@ -106,6 +106,10 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 		event.Count = createOptions[2]
 		event.Version = k8sVersion
 
+		if event.Name == "" {
+			reportErr(fmt.Errorf("no cluster name provided"), "set cluster name")
+		}
+
 	case deleteAction:
 		var clusterList []map[string]string
 
