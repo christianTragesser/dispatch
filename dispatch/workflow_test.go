@@ -57,14 +57,24 @@ func ExampleCLIWorkflow_help() {
 	//  dispatch delete -h
 }
 
+func ExampleCLIWorkflow_createHelp() {
+	event := &Event{}
+
+	os.Args = []string{"dispatch", "create"}
+
+	CLIWorkflow("create", event)
+
+	// Output:  ! create events require the -name flag
+}
+
 func ExampleCLIWorkflow_deleteHelp() {
 	event := &Event{}
 
 	os.Args = []string{"dispatch", "delete"}
 
-	CLIWorkflow("delete-Version", event)
+	CLIWorkflow("delete", event)
 
-	// Output:  ! cluster FQDN is required
+	// Output:  ! delete events require the -name flag
 }
 
 func ExampleCLIWorkflow_notValid() {

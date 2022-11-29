@@ -35,8 +35,6 @@ func CLICreate(event *Event) Event {
 	event.Version = *createVersion
 	event.Verified = *createYOLO
 
-	validateClusterName(event.Name)
-
 	return *event
 }
 
@@ -50,14 +48,8 @@ func CLIDelete(event *Event) Event {
 		reportErr(err, " parse delete command")
 	}
 
-	if *deleteName == "" {
-		reportErr(fmt.Errorf("-name flag required for delete events"), "determine cluster name")
-	}
-
 	event.Name = strings.ToLower(*deleteName)
 	event.Verified = *deleteYOLO
-
-	validateClusterName(event.Name)
 
 	return *event
 }
@@ -71,12 +63,28 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 
 		event.Action = exitStatus
 	case "create":
-		*event = CLICreate(event)
-		event.Action = action
+		if event.Name == "" {
+			fmt.Println(" ! create events require the -name flag")
+
+			event.Action = exitStatus
+		} else {
+			validateClusterName(event.Name)
+
+			*event = CLICreate(event)
+			event.Action = action
+		}
 
 	case "delete":
-		*event = CLIDelete(event)
-		event.Action = action
+		if event.Name == "" {
+			fmt.Println(" ! delete events require the -name flag")
+
+			event.Action = exitStatus
+		} else {
+			validateClusterName(event.Name)
+
+			*event = CLIDelete(event)
+			event.Action = action
+		}
 
 	case "-h":
 		fmt.Printf("Dispatch options:\n dispatch create -h\n dispatch delete -h\n")
