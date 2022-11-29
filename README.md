@@ -10,16 +10,17 @@ Dispatch simplifies secure, scalable and resilient management of ephemeral kuber
   - `AmazonS3FullAccess`
   - `IAMFullAccess`
   - `AmazonVPCFullAccess`
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) - Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)   
+Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  
 The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 
 
 #### AWS Authentication
-AWS authentication is performed using environment variables or AWS credentials file (`~/.aws/credentials`).  
+Authentication is managed using environment variables or AWS credentials file (`~/.aws/credentials`).  
 Environment variable settings take precedence over credential file configuration.
 
-To use an AWS profile other than `default` in your AWS credentials file, set the environment variable `AWS_PROFILE` to the profile name
+To use an AWS profile other than `default` in your AWS credentials file, set the environment variable `AWS_PROFILE` to the profile name.
 ```
 export AWS_PROFILE="my-profile"
 ```
@@ -84,7 +85,7 @@ Events can be configured via CLI subcommands
 $ dispatch create -h
 Usage of create:
   -name string
-    	cluster name (default "")
+    	cluster name
   -nodes string
     	cluster node count (default "2")
   -size string
