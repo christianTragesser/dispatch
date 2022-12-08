@@ -48,7 +48,6 @@ func (e Event) tuiDelete(clusters []map[string]string) string {
 	selection := tuidelete.SelectCluster(clusters)
 	clusterName := strings.TrimPrefix(selection, pulumiStacksPath)
 	clusterName = strings.TrimSuffix(clusterName, "-eks.json")
-	clusterName = strings.ReplaceAll(clusterName, "-", ".")
 
 	return clusterName
 }

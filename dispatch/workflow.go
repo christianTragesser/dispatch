@@ -63,27 +63,27 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 
 		event.Action = exitStatus
 	case "create":
+		*event = CLICreate(event)
+		event.Action = action
+
 		if event.Name == "" {
 			fmt.Println(" ! create events require the -name flag")
 
 			event.Action = exitStatus
 		} else {
 			validateClusterName(event.Name)
-
-			*event = CLICreate(event)
-			event.Action = action
 		}
 
 	case "delete":
+		*event = CLIDelete(event)
+		event.Action = action
+
 		if event.Name == "" {
 			fmt.Println(" ! delete events require the -name flag")
 
 			event.Action = exitStatus
 		} else {
 			validateClusterName(event.Name)
-
-			*event = CLIDelete(event)
-			event.Action = action
 		}
 
 	case "-h":
@@ -153,7 +153,7 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 }
 
 func clusterExists(event Event) bool {
-	stackID := strings.ReplaceAll(event.Name, ".", "-") + "-eks"
+	stackID := event.Name + "-eks"
 
 	clusters := listExistingClusters(event.Bucket)
 

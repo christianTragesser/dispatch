@@ -61,6 +61,21 @@ func setPulumiEngine(bucket string) {
 	fmt.Printf("%s\n", string(data))
 }
 
+func getExportValue(export map[string]interface{}, field string) string {
+	resource := make(map[string]string)
+
+	for k, v := range export {
+		switch v.(type) {
+		case string:
+			resource[k] = fmt.Sprintf("%v", v)
+		default:
+			reportErr(nil, "determine type")
+		}
+	}
+
+	return resource[field]
+}
+
 func Exec(event *Event) {
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
@@ -109,8 +124,10 @@ func Exec(event *Event) {
 			DesiredCapacity: pulumi.Int(minClusterSize),
 			MinSize:         pulumi.Int(minClusterSize),
 			MaxSize:         pulumi.Int(maxClusterSize),
+			// OIDC provider for IAM RBAC
+			CreateOidcProvider: pulumi.BoolPtr(true),
 			// Do not give the worker nodes a public IP address
-			NodeAssociatePublicIpAddress: pulumi.Bool(false),
+			NodeAssociatePublicIpAddress: pulumi.BoolRef(false),
 			Tags: pulumi.StringMap{
 				"Owner":       pulumi.String(event.User),
 				"EKS cluster": pulumi.String(eksID),
@@ -139,8 +156,8 @@ func Exec(event *Event) {
 
 	ctx := context.Background()
 
-	projectID := event.User + "-eks"
-	stackID := strings.ReplaceAll(event.Name, ".", "-") + "-eks"
+	projectID := event.User + "-dispatch"
+	stackID := event.Name + "-eks"
 
 	s, err := auto.UpsertStackInlineSource(ctx, stackID, projectID, deploy)
 	if err != nil {
@@ -149,7 +166,7 @@ func Exec(event *Event) {
 
 	w := s.Workspace()
 
-	err = w.InstallPlugin(ctx, "aws", "v4.0.0")
+	err = w.InstallPlugin(ctx, "aws", "v5.21.1")
 	if err != nil {
 		reportErr(err, "install pulumi plugins")
 	}
@@ -162,7 +179,7 @@ func Exec(event *Event) {
 
 	_, err = s.Refresh(ctx)
 	if err != nil {
-		reportErr(err, "failed to refresh stack")
+		reportErr(err, "to refresh stack")
 	}
 
 	if !event.Verified {
@@ -193,26 +210,15 @@ func Exec(event *Event) {
 
 		res, err := s.Up(ctx, stdoutStreamer)
 		if err != nil {
-			reportErr(err, "Failed to update stack.")
+			reportErr(err, "to update stack.")
 		}
 
-		output := res.Outputs["cluster"].Value.(map[string]interface{})
+		expCluster := res.Outputs["cluster"].Value.(map[string]interface{})
 
-		cluster := make(map[string]string)
+		clusterID := getExportValue(expCluster, "id")
 
-		for k, v := range output {
-			switch v.(type) {
-			case string:
-				cluster[k] = fmt.Sprintf("%v", v)
-			default:
-				reportErr(nil, "determine type")
-			}
-		}
-
-		setEKSConfig(cluster["id"], event.Name)
+		setEKSConfig(clusterID, event.Name)
 	case "delete":
-		fmt.Println("Starting stack destroy")
-
 		// wire up our destroy to stream progress to stdout
 		stdoutStreamer := optdestroy.ProgressStreams(os.Stdout)
 
@@ -222,13 +228,13 @@ func Exec(event *Event) {
 			fmt.Printf("Failed to destroy stack: %v", err)
 		}
 
-		fmt.Println("\nStack successfully destroyed")
-
-		fmt.Printf(" - Deleting %s stack configuration from state backend.\n", stackID)
+		fmt.Printf("%s stack successfully destroyed\n", stackID)
 
 		if err := w.RemoveStack(ctx, stackID); err != nil {
 			reportErr(err, "remove stack")
 		}
+
+		fmt.Printf(" - stack %s removed from S3 backend state\n", stackID)
 	default:
 		fmt.Println("Unknown pulumi action.")
 	}
