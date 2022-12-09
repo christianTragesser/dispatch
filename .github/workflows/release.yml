@@ -23,7 +23,6 @@ jobs:
           goreleaser release
   
   container-image-release:
-    needs: binary-release
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker Buildx
