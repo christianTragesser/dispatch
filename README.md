@@ -5,11 +5,13 @@ Dispatch simplifies secure, scalable and resilient management of ephemeral kuber
 
 
 ### Dependencies
-* AWS credentials associated with the following IAM policies:
+* AWS access to the following AWS managed IAM policies:
   - `AmazonEC2FullAccess`
   - `AmazonS3FullAccess`
-  - `IAMFullAccess`
+  - `AmazonSSMFullAccess`
   - `AmazonVPCFullAccess`
+  - `IAMFullAccess`
+* IAM policy with `Allow` effect for `eks:*` and `cloudformation:*` actions on `*` resource
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)   
 Access to Dispatch provisioned clusters relies on AWS [Identity and Access Management (IAM)](https://aws.amazon.com/iam/).  
 The subcommand `aws eks` is required for initial access to newly provisioned EKS clusters. 
