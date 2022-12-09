@@ -301,7 +301,7 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 	return s3Client.HeadObject(context.TODO(), input)
 }
 
-func setEKSConfig(clusterID string, fqdn string) {
+func setEKSConfig(clusterID string, name string) string {
 	home, homeSet := os.LookupEnv("HOME")
 	if !homeSet {
 		fmt.Println("$HOME not set")
@@ -315,7 +315,7 @@ func setEKSConfig(clusterID string, fqdn string) {
 	cmd := exec.Command(
 		"aws", "eks", "--region", region,
 		"update-kubeconfig", "--name", clusterID,
-		"--alias", fqdn,
+		"--alias", name,
 	)
 
 	stdout, err := cmd.StdoutPipe()
@@ -338,6 +338,5 @@ func setEKSConfig(clusterID string, fqdn string) {
 
 	fmt.Println(string(data))
 
-	fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", fqdn)
-	fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeconfigPath)
+	return kubeconfigPath
 }
