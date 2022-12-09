@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
 	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
 	"github.com/pulumi/pulumi-eks/sdk/go/eks"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
@@ -138,8 +140,98 @@ func Exec(event *Event) {
 			reportErr(err, "create EKS cluster")
 		}
 
-		// Export cluster ID
-		ctx.Export("cluster", eksCluster.Core.Cluster())
+		oidcARN := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
+			return oidc.Arn
+		}).(pulumi.StringOutput)
+
+		oidcPolicyURL := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
+			return pulumi.Sprintf("%v:sub", oidc.Url)
+		}).(pulumi.StringOutput)
+
+		// cert-manager IRSA
+		// cert-manager role trust policy
+		certManagerTrustPolicy := iam.GetPolicyDocumentOutput(ctx, iam.GetPolicyDocumentOutputArgs{
+			Statements: iam.GetPolicyDocumentStatementArray{
+				iam.GetPolicyDocumentStatementArgs{
+					Sid:    pulumi.String(""),
+					Effect: pulumi.String("Allow"),
+					Principals: iam.GetPolicyDocumentStatementPrincipalArray{
+						iam.GetPolicyDocumentStatementPrincipalArgs{
+							Type:        pulumi.String("Federated"),
+							Identifiers: pulumi.ToStringArrayOutput([]pulumi.StringOutput{oidcARN}),
+						},
+					},
+					Actions: pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("sts:AssumeRoleWithWebIdentity")}),
+					Conditions: iam.GetPolicyDocumentStatementConditionArray{
+						iam.GetPolicyDocumentStatementConditionArgs{
+							Test:     pulumi.String("StringEquals"),
+							Variable: oidcPolicyURL,
+							Values:   pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("system:serviceaccount:cert-manager:cert-manager")}),
+						},
+					},
+				},
+			},
+		})
+
+		// cert-manager Role
+		certManagerRole, err := iam.NewRole(ctx, eksID+"-cert-manager", &iam.RoleArgs{
+			AssumeRolePolicy: certManagerTrustPolicy.Json(),
+			Tags: pulumi.StringMap{
+				"Owner":       pulumi.String(event.User),
+				"EKS cluster": pulumi.String(eksID),
+				"Created by":  pulumi.String("Dispatch"),
+			},
+		})
+		if err != nil {
+			reportErr(err, "create cert-manager IAM assume role")
+		}
+
+		// ACME DNS01 policy for cert-manager role
+		acmeDNS01PolicyJSON, err := json.Marshal(map[string]interface{}{
+			"Version": "2012-10-17",
+			"Statement": []map[string]interface{}{
+				{
+					"Effect": "Allow",
+					"Action": []string{
+						"route53:GetChange",
+					},
+					"Resource": "arn:aws:route53:::change/*",
+				},
+				{
+					"Effect": "Allow",
+					"Action": []string{
+						"route53:ChangeResourceRecordSets",
+						"route53:ListResourceRecordSets",
+					},
+					"Resource": "arn:aws:route53:::hostedzone/*",
+				},
+				{
+					"Effect": "Allow",
+					"Action": []string{
+						"route53:ListHostedZonesByName",
+					},
+					"Resource": "*",
+				},
+			},
+		})
+		if err != nil {
+			reportErr(err, "create cert-manager inline policy")
+		}
+
+		acmePolicyString := string(acmeDNS01PolicyJSON)
+
+		_, err = iam.NewRolePolicy(ctx, eksID+"-acme-dns01", &iam.RolePolicyArgs{
+			Role:   certManagerRole.Name,
+			Policy: pulumi.String(acmePolicyString),
+		})
+		if err != nil {
+			reportErr(err, "create ACME DNS01 policy")
+		}
+
+		if event.Action == createAction {
+			ctx.Export("cluster", eksCluster.Core.Cluster())
+			ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
+		}
 
 		return nil
 	}
@@ -217,7 +309,10 @@ func Exec(event *Event) {
 
 		clusterID := getExportValue(expCluster, "id")
 
-		setEKSConfig(clusterID, event.Name)
+		kubeConfigPath := setEKSConfig(clusterID, event.Name)
+
+		fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", event.Name)
+		fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
 	case "delete":
 		// wire up our destroy to stream progress to stdout
 		stdoutStreamer := optdestroy.ProgressStreams(os.Stdout)
