@@ -66,6 +66,11 @@ func ensureDispatchConfig(dispatchDir string) string {
 		fmt.Print(" + Please enter a user ID: ")
 		fmt.Scanf("%s", &dispatchUID)
 
+		if len(dispatchUID) == 0 {
+			fmt.Println("   ! You must provide a user ID, exiting.")
+			os.Exit(0)
+		}
+
 		configMap := map[string]string{"uid": dispatchUID}
 
 		configData, err := yaml.Marshal(configMap)
