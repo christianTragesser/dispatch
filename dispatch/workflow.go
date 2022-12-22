@@ -71,7 +71,10 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 
 			event.Action = exitStatus
 		} else {
-			validateClusterName(event.Name)
+			_, err := validateClusterName(event.Name)
+			if err != nil {
+				reportErr(err, "provide valid cluster name")
+			}
 		}
 
 	case "delete":
@@ -83,7 +86,10 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 
 			event.Action = exitStatus
 		} else {
-			validateClusterName(event.Name)
+			_, err := validateClusterName(event.Name)
+			if err != nil {
+				reportErr(err, "provide valid cluster name")
+			}
 		}
 
 	case "-h":
@@ -166,10 +172,14 @@ func clusterExists(event Event) bool {
 	return false
 }
 
-func validateClusterName(name string) {
-	valid := regexp.MustCompile(`^[a-z0-9]+(?:[.-][a-z0-9]+)*$`).MatchString(name)
+func validateClusterName(name string) (bool, error) {
+	var err error
+
+	valid := regexp.MustCompile(`^[a-zA-Z][-a-zA-Z0-9]*`).MatchString(name)
 
 	if !valid {
-		reportErr(fmt.Errorf("cluster name '%s' is invalid ([a-zA-Z0-9][.-])", name), "set cluster name")
+		err = fmt.Errorf("cluster name '%s' is invalid (^[a-zA-Z][-a-zA-Z0-9]*)\ncluster name must begin with a letter", name)
 	}
+
+	return valid, err
 }

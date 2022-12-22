@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"os"
+	"testing"
 )
 
 type mockTUIEvent struct {
@@ -33,6 +34,35 @@ func (e mockTUIEvent) getClusterCreationDate(bucket string, cluster string) stri
 	}
 
 	return e.datestamp
+}
+
+func TestValidClusterName(t *testing.T) {
+	tests := []struct {
+		name      string
+		testValue string
+		expect    bool
+	}{
+		{
+			name:      "Starts with letter",
+			testValue: "my-cluster",
+			expect:    true,
+		},
+		{
+			name:      "Starts with number",
+			testValue: "12345",
+			expect:    false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, _ := validateClusterName(tc.testValue)
+
+			if got != tc.expect {
+				t.Errorf("validClusterName unit test failure '%s'\ngot: '%v'\nwant: '%v'", tc.name, got, tc.expect)
+			}
+		})
+	}
 }
 
 func ExampleCLIWorkflow_version() {
