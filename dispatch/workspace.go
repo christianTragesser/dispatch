@@ -12,12 +12,22 @@ import (
 	"runtime"
 	"strings"
 
-	"sigs.k8s.io/yaml"
+	"gopkg.in/yaml.v3"
 )
 
 const binMode int = 0755
 const privMode int = 0600
 const pubMode int = 0644
+
+type kubeconfigFile struct {
+	APIVersion     string              `yaml:"apiVersion"`
+	Kind           string              `yaml:"kind"`
+	CurrentContext string              `yaml:"current-context"`
+	Preferences    map[string]string   `yaml:"preferences"`
+	Clusters       []map[string]string `yaml:"clusters"`
+	Users          []map[string]string `yaml:"users"`
+	Contexts       []map[string]string `yaml:"contexts"`
+}
 
 type workspace struct {
 	root       string
@@ -52,6 +62,42 @@ func ensureKubeConfig(kubeDir string) {
 		if err != nil {
 			reportErr(err, "set file permissions for kube config")
 		}
+	}
+}
+
+func ClearKubeConfig() {
+	home, homeSet := os.LookupEnv("HOME")
+
+	if homeSet {
+		configFile := filepath.Join(home, ".dispatch", ".kube", "config")
+
+		_, readErr := os.Stat(configFile)
+
+		if os.IsNotExist(readErr) {
+			fmt.Printf("\nkubeconfig (%s) not found\n", configFile)
+		} else {
+			cleanConfig := kubeconfigFile{
+				APIVersion:     "v1",
+				Kind:           "Config",
+				CurrentContext: "",
+				Clusters:       []map[string]string{},
+				Contexts:       []map[string]string{},
+				Users:          []map[string]string{},
+				Preferences:    map[string]string{},
+			}
+
+			configData, err := yaml.Marshal(cleanConfig)
+			if err != nil {
+				reportErr(err, "construct clean kubeconfig")
+			}
+
+			writeErr := os.WriteFile(configFile, configData, fs.FileMode(privMode))
+			if writeErr != nil {
+				reportErr(writeErr, "write clean kubeconfig")
+			}
+		}
+	} else {
+		reportErr(nil, "$HOME environment variable not found, exiting.\n")
 	}
 }
 

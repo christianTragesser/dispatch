@@ -78,7 +78,9 @@ func getExportValue(export map[string]interface{}, field string) string {
 	return resource[field]
 }
 
-func Exec(event *Event) {
+func Exec(event *Event) string {
+	var eksCertManagerRoleARN string
+
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
 		eksID := strings.ReplaceAll(event.Name, ".", "-")
@@ -245,6 +247,7 @@ func Exec(event *Event) {
 
 	setPulumiEngine(event.Bucket)
 	os.Setenv("PULUMI_CONFIG_PASSPHRASE", "Hello1234")
+	os.Setenv("PULUMI_SKIP_UPDATE_CHECK", "true")
 
 	ctx := context.Background()
 
@@ -311,6 +314,8 @@ func Exec(event *Event) {
 
 		kubeConfigPath := setEKSConfig(clusterID, event.Name)
 
+		eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
+
 		fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", event.Name)
 		fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
 	case "delete":
@@ -330,7 +335,11 @@ func Exec(event *Event) {
 		}
 
 		fmt.Printf(" - stack %s removed from S3 backend state\n", stackID)
+
+		ClearKubeConfig()
 	default:
 		fmt.Println("Unknown pulumi action.")
 	}
+
+	return eksCertManagerRoleARN
 }
