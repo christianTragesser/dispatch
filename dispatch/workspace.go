@@ -319,7 +319,7 @@ func EnsureDependencies(event *Event) Event {
 
 	testAWSCreds(*clientConfig)
 
-	event.Bucket = ensureS3Bucket(*clientConfig, event.User)
+	event.Bucket = ensureS3Bucket(*clientConfig, *event)
 
 	printExistingClusters(event.Bucket)
 

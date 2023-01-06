@@ -210,12 +210,12 @@ func testAWSCreds(clientConfig aws.Config) {
 	fmt.Printf(" . Valid AWS credentials have been provided for region %s\n", clientConfig.Region)
 }
 
-func ensureS3Bucket(clientConfig aws.Config, user string) string {
+func ensureS3Bucket(clientConfig aws.Config, event Event) string {
 	var bucketExists bool
 
 	accountNumber := getAccountNumber()
 
-	kopsBucket := user + "-dispatch-state-store-" + accountNumber
+	kopsBucket := event.User + "-dispatch-state-store-" + accountNumber
 
 	buckets := getS3Buckets(clientConfig)
 
@@ -232,11 +232,13 @@ func ensureS3Bucket(clientConfig aws.Config, user string) string {
 	if !bucketExists {
 		var createBucket string
 
-		fmt.Printf(" ! S3 bucket %s for stack state does not exists\n", kopsBucket)
-		fmt.Printf("\n ? Create S3 bucket %s (y/n): ", kopsBucket)
-		fmt.Scanf("%s", &createBucket)
+		if !event.Verified {
+			fmt.Printf(" ! S3 bucket %s for stack state does not exists\n", kopsBucket)
+			fmt.Printf("\n ? Create S3 bucket %s (y/n): ", kopsBucket)
+			fmt.Scanf("%s", &createBucket)
+		}
 
-		if createBucket == "y" || createBucket == "Y" {
+		if createBucket == "y" || createBucket == "Y" || event.Verified {
 			createStateBucket(clientConfig, kopsBucket)
 		} else {
 			fmt.Print("\n S3 bucket is required for cluster provisioning, exiting.\n\n")
