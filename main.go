@@ -23,10 +23,11 @@ func main() {
 
 		if sessionEvent.Action == "exit" {
 			os.Exit(0)
-		} else {
-			fmt.Print(asciiArt)
-			*sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 		}
+
+		fmt.Print(asciiArt)
+
+		*sessionEvent = dispatch.EnsureDependencies(sessionEvent)
 	} else {
 		// use TUI workflow
 		fmt.Print(asciiArt)
