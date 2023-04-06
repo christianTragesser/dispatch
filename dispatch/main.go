@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	k8sVersion       string = "1.24"
+	k8sVersion       string = "1.25"
 	pulumiVersion    string = "3.47.2"
 	smallEC2         string = "t2.medium"
 	mediumEC2        string = "t2.xlarge"
