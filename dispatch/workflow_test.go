@@ -21,14 +21,19 @@ func (e mockTUIEvent) tuiCreate() []string {
 }
 
 func (e mockTUIEvent) tuiDelete(clusters []map[string]string) string {
+	_ = clusters
 	return e.FQDN
 }
 
 func (e mockTUIEvent) getClusters(bucket string) []string {
+	_ = bucket
 	return e.clusters
 }
 
 func (e mockTUIEvent) getClusterCreationDate(bucket string, cluster string) string {
+	_ = bucket
+	_ = cluster
+
 	if e.err != nil {
 		return "not found"
 	}
