@@ -265,10 +265,6 @@ func Exec(event Event) string {
 
 	stackName := auto.FullyQualifiedStackName("organization", projectID, stackID)
 
-	fmt.Println(projectID)
-	fmt.Println(stackID)
-	fmt.Println(stackName)
-
 	s, err := auto.UpsertStackInlineSource(ctx, stackName, projectID, deploy)
 	if err != nil {
 		reportErr(err, "create workspace")

@@ -50,8 +50,6 @@ func (e Event) tuiDelete(clusters []map[string]string) string {
 	nameFile := nameSplit[len(nameSplit)-1]
 	clusterName := strings.TrimSuffix(nameFile, "-eks.json")
 
-	fmt.Println(clusterName)
-
 	return clusterName
 }
 

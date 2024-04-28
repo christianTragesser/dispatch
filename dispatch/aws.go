@@ -71,7 +71,6 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
-		fmt.Println(err)
 		reportErr(err, "authenticate with AWS API")
 	}
 }
