@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	pulumiVersion    string = "3.100.0"
+	pulumiVersion    string = "3.114.0"
 	smallEC2         string = "t2.medium"
 	mediumEC2        string = "t2.xlarge"
 	largeEC2         string = "m4.2xlarge"
