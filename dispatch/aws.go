@@ -5,40 +5,16 @@ package dispatch
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
-
-func getNodeSize(size string) (string, error) {
-	var ec2Instance string
-
-	nodeSize := strings.ToUpper(size)
-
-	switch nodeSize {
-	case "SMALL", "S":
-		ec2Instance = smallEC2
-	case "MEDIUM", "M":
-		ec2Instance = mediumEC2
-	case "LARGE", "L":
-		ec2Instance = largeEC2
-	default:
-		return "", fmt.Errorf("invalid node size: %s", size)
-	}
-
-	return ec2Instance, nil
-}
 
 func setAWSRegion() string {
 	region, regionSet := os.LookupEnv("AWS_REGION")
@@ -110,34 +86,6 @@ func getS3Buckets(clientConfig aws.Config) *s3.ListBucketsOutput {
 	}
 
 	return buckets
-}
-
-// provide list of AWS region availability zones
-func getAvailabilityZones() string {
-	var azs string
-
-	clientConfig := awsClientConfig()
-	ec2Client := ec2.NewFromConfig(*clientConfig)
-
-	regionValue := []string{clientConfig.Region}
-	location := &ec2types.Filter{Name: aws.String("region-name"), Values: regionValue}
-	settingFilter := []ec2types.Filter{*location}
-	describeSettings := &ec2.DescribeAvailabilityZonesInput{Filters: settingFilter}
-
-	resp, err := ec2Client.DescribeAvailabilityZones(context.TODO(), describeSettings)
-	if err != nil {
-		reportErr(err, "describe "+clientConfig.Region+" availability zones")
-	}
-
-	for i := range resp.AvailabilityZones {
-		if i == 0 {
-			azs += *resp.AvailabilityZones[i].ZoneName
-		} else {
-			azs = azs + "," + *resp.AvailabilityZones[i].ZoneName
-		}
-	}
-
-	return azs
 }
 
 func getAccountNumber() string {
@@ -303,44 +251,4 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 	}
 
 	return s3Client.HeadObject(context.TODO(), input)
-}
-
-func setEKSConfig(clusterID string, name string) string {
-	home, homeSet := os.LookupEnv("HOME")
-	if !homeSet {
-		fmt.Println("$HOME not set")
-	}
-
-	kubeconfigPath := filepath.Join(home, ".dispatch", ".kube", "config")
-	os.Setenv("KUBECONFIG", kubeconfigPath)
-
-	region := setAWSRegion()
-
-	cmd := exec.Command(
-		"aws", "eks", "--region", region,
-		"update-kubeconfig", "--name", clusterID,
-		"--alias", name,
-	)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		reportErr(err, "display aws eks cmd stdout")
-	}
-
-	if err := cmd.Start(); err != nil {
-		reportErr(err, "start aws eks update")
-	}
-
-	data, err := io.ReadAll(stdout)
-	if err != nil {
-		reportErr(err, "read aws eks stdout")
-	}
-
-	if err := cmd.Wait(); err != nil {
-		reportErr(err, "update kubeconfig")
-	}
-
-	fmt.Println(string(data))
-
-	return kubeconfigPath
 }

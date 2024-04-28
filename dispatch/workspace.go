@@ -149,8 +149,6 @@ func ensureDispatchConfig(dispatchDir string) string {
 }
 
 func removePreviousPulumiBins(binPath string) {
-	const preferredVersions = 1
-
 	installedVersions, err := os.ReadDir(binPath)
 	if err != nil {
 		reportErr(err, "list pulumi binary directory")

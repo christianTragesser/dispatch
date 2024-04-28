@@ -59,21 +59,6 @@ func setPulumiEngine(bucket string) {
 	fmt.Printf("%s\n", string(data))
 }
 
-func getExportValue(export map[string]interface{}, field string) string {
-	resource := make(map[string]string)
-
-	for k, v := range export {
-		switch v.(type) {
-		case string:
-			resource[k] = fmt.Sprintf("%v", v)
-		default:
-			reportErr(nil, "determine type")
-		}
-	}
-
-	return resource[field]
-}
-
 func Exec(event Event) string {
 	var eksCertManagerRoleARN string
 
@@ -234,7 +219,7 @@ func Exec(event Event) string {
 		tmpJSON0, err := json.Marshal(map[string]interface{}{
 			"Version": "2012-10-17",
 			"Statement": []map[string]interface{}{
-				map[string]interface{}{
+				{
 					"Action": "sts:AssumeRole",
 					"Effect": "Allow",
 					"Sid":    "",

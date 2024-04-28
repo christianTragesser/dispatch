@@ -68,14 +68,6 @@ func (e Event) getClusterCreationDate(bucket string, cluster string) string {
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
 
-func (e Event) vpcZones() string {
-	return getAvailabilityZones()
-}
-
-func (e Event) ec2Type(sizeName string) (string, error) {
-	return getNodeSize(sizeName)
-}
-
 func reportErr(err error, activity string) {
 	fmt.Printf(" ! Failed to %s\n\n", activity)
 	log.Fatalln(err)
