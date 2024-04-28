@@ -73,6 +73,7 @@ func awsClientConfig() *aws.Config {
 
 		if err != nil {
 			fmt.Println(" ! Failed to find AWS credentials in env vars or credentials file")
+			fmt.Println(err)
 		}
 	} else {
 		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
@@ -94,6 +95,7 @@ func testIAM(clientConfig aws.Config) {
 
 	_, err := iamClient.ListUsers(context.TODO(), input)
 	if err != nil {
+		fmt.Println(err)
 		reportErr(err, "authenticate with AWS API")
 	}
 }

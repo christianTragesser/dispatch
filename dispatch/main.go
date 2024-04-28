@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	k8sVersion       string = "1.25"
-	pulumiVersion    string = "3.47.2"
+	pulumiVersion    string = "3.100.0"
 	smallEC2         string = "t2.medium"
 	mediumEC2        string = "t2.xlarge"
 	largeEC2         string = "m4.2xlarge"
@@ -46,8 +45,12 @@ func (e Event) tuiCreate() []string {
 
 func (e Event) tuiDelete(clusters []map[string]string) string {
 	selection := tuidelete.SelectCluster(clusters)
-	clusterName := strings.TrimPrefix(selection, pulumiStacksPath)
-	clusterName = strings.TrimSuffix(clusterName, "-eks.json")
+	clusterNamespace := strings.TrimPrefix(selection, pulumiStacksPath)
+	nameSplit := strings.Split(clusterNamespace, "/")
+	nameFile := nameSplit[len(nameSplit)-1]
+	clusterName := strings.TrimSuffix(nameFile, "-eks.json")
+
+	fmt.Println(clusterName)
 
 	return clusterName
 }

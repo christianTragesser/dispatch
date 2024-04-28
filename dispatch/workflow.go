@@ -16,12 +16,11 @@ type TUIEventAPI interface {
 	getClusterCreationDate(Bucket string, cluster string) string
 }
 
-func CLICreate(event *Event) Event {
+func CLICreate(event Event) Event {
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
 	createName := createCommand.String("name", "", "cluster name")
 	createSize := createCommand.String("size", "small", "cluster node size")
 	nodeCount := createCommand.String("nodes", "2", "cluster node count")
-	createVersion := createCommand.String("version", k8sVersion, "Kubernetes version")
 	createYOLO := createCommand.Bool("yes", false, "skip verification prompt for cluster creation")
 
 	err := createCommand.Parse(os.Args[2:])
@@ -32,13 +31,12 @@ func CLICreate(event *Event) Event {
 	event.Name = strings.ToLower(*createName)
 	event.Size = *createSize
 	event.Count = *nodeCount
-	event.Version = *createVersion
 	event.Verified = *createYOLO
 
-	return *event
+	return event
 }
 
-func CLIDelete(event *Event) Event {
+func CLIDelete(event Event) Event {
 	deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteName := deleteCommand.String("name", "", "cluster name")
 	deleteYOLO := deleteCommand.Bool("yes", false, "skip verification prompt for cluster deletion")
@@ -51,10 +49,10 @@ func CLIDelete(event *Event) Event {
 	event.Name = strings.ToLower(*deleteName)
 	event.Verified = *deleteYOLO
 
-	return *event
+	return event
 }
 
-func CLIWorkflow(dispatchVersion string, event *Event) Event {
+func CLIWorkflow(dispatchVersion string, event Event) Event {
 	action := os.Args[1]
 
 	switch action {
@@ -63,7 +61,7 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 
 		event.Action = exitStatus
 	case "create":
-		*event = CLICreate(event)
+		event = CLICreate(event)
 		event.Action = action
 
 		if event.Name == "" {
@@ -78,7 +76,7 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 		}
 
 	case "delete":
-		*event = CLIDelete(event)
+		event = CLIDelete(event)
 		event.Action = action
 
 		if event.Name == "" {
@@ -104,10 +102,10 @@ func CLIWorkflow(dispatchVersion string, event *Event) Event {
 		event.Action = exitStatus
 	}
 
-	return *event
+	return event
 }
 
-func TUIWorkflow(te TUIEventAPI, event *Event) Event {
+func TUIWorkflow(te TUIEventAPI, event Event) Event {
 	action := te.getTUIAction()
 
 	switch action {
@@ -118,7 +116,6 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 		event.Name = createOptions[0]
 		event.Size = createOptions[1]
 		event.Count = createOptions[2]
-		event.Version = k8sVersion
 
 		if event.Name == "" {
 			reportErr(fmt.Errorf("no cluster name provided"), "set cluster name")
@@ -155,7 +152,7 @@ func TUIWorkflow(te TUIEventAPI, event *Event) Event {
 		return Event{Action: exitStatus}
 	}
 
-	return *event
+	return event
 }
 
 func clusterExists(event Event) bool {

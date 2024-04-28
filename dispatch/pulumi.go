@@ -9,12 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
-	"strings"
 
-	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/iam"
-	"github.com/pulumi/pulumi-awsx/sdk/go/awsx/ec2"
-	"github.com/pulumi/pulumi-eks/sdk/go/eks"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
@@ -78,168 +74,196 @@ func getExportValue(export map[string]interface{}, field string) string {
 	return resource[field]
 }
 
-func Exec(event *Event) string {
+func Exec(event Event) string {
 	var eksCertManagerRoleARN string
 
 	// deploy defines AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
-		eksID := strings.ReplaceAll(event.Name, ".", "-")
+		/*
+			eksID := strings.ReplaceAll(event.Name, ".", "-")
 
-		// Set cluster values
-		minClusterSize, err := strconv.Atoi(event.Count)
-		if err != nil {
-			reportErr(err, "get cluster node count")
-		}
+			// Set cluster values
+			minClusterSize, err := strconv.Atoi(event.Count)
+			if err != nil {
+				reportErr(err, "get cluster node count")
+			}
 
-		maxClusterSize := minClusterSize + defaultScale
+			maxClusterSize := minClusterSize + defaultScale
 
-		eksNodeInstanceType, err := getNodeSize(event.Size)
-		if err != nil {
-			reportErr(err, "get node instance type")
-		}
+			eksNodeInstanceType, err := getNodeSize(event.Size)
+			if err != nil {
+				reportErr(err, "get node instance type")
+			}
 
-		vpcNetworkCidr := "10.0.0.0/16"
+			vpcNetworkCidr := "10.0.0.0/16"
 
-		// Create a new VPC, subnets, and associated infrastructure
-		eksVpc, err := ec2.NewVpc(ctx, eksID, &ec2.VpcArgs{
-			EnableDnsHostnames: pulumi.Bool(true),
-			CidrBlock:          &vpcNetworkCidr,
-			Tags: pulumi.StringMap{
-				"Owner":       pulumi.String(event.User),
-				"EKS cluster": pulumi.String(eksID),
-				"Created by":  pulumi.String("Dispatch"),
-			},
-		})
-		if err != nil {
-			reportErr(err, "create AWS VPC")
-		}
+			// Create a new VPC, subnets, and associated infrastructure
+			eksVpc, err := ec2.NewVpc(ctx, eksID, &ec2.VpcArgs{
+				EnableDnsHostnames: pulumi.Bool(true),
+				CidrBlock:          &vpcNetworkCidr,
+				Tags: pulumi.StringMap{
+					"Owner":       pulumi.String(event.User),
+					"EKS cluster": pulumi.String(eksID),
+					"Created by":  pulumi.String("Dispatch"),
+				},
+			})
+			if err != nil {
+				reportErr(err, "create AWS VPC")
+			}
 
-		// Create a new EKS cluster
-		eksCluster, err := eks.NewCluster(ctx, eksID, &eks.ClusterArgs{
-			Version: pulumi.String(k8sVersion),
-			// Put the cluster in the new VPC created earlier
-			VpcId: eksVpc.VpcId,
-			// Public subnets will be used for load balancers
-			PublicSubnetIds: eksVpc.PublicSubnetIds,
-			// Private subnets will be used for cluster nodes
-			PrivateSubnetIds: eksVpc.PrivateSubnetIds,
-			// Cluster settings
-			InstanceType:    pulumi.String(eksNodeInstanceType),
-			DesiredCapacity: pulumi.Int(minClusterSize),
-			MinSize:         pulumi.Int(minClusterSize),
-			MaxSize:         pulumi.Int(maxClusterSize),
-			// OIDC provider for IAM RBAC
-			CreateOidcProvider: pulumi.BoolPtr(true),
-			// Do not give the worker nodes a public IP address
-			NodeAssociatePublicIpAddress: pulumi.BoolRef(false),
-			Tags: pulumi.StringMap{
-				"Owner":       pulumi.String(event.User),
-				"EKS cluster": pulumi.String(eksID),
-				"Created by":  pulumi.String("Dispatch"),
-			},
-		})
-		if err != nil {
-			reportErr(err, "create EKS cluster")
-		}
+			// Create a new EKS cluster
+			eksCluster, err := eks.NewCluster(ctx, eksID, &eks.ClusterArgs{
+				//Version: pulumi.String(k8sVersion),
+				// Put the cluster in the new VPC created earlier
+				VpcId: eksVpc.VpcId,
+				// Public subnets will be used for load balancers
+				PublicSubnetIds: eksVpc.PublicSubnetIds,
+				// Private subnets will be used for cluster nodes
+				PrivateSubnetIds: eksVpc.PrivateSubnetIds,
+				// Cluster settings
+				InstanceType:    pulumi.String(eksNodeInstanceType),
+				DesiredCapacity: pulumi.Int(minClusterSize),
+				MinSize:         pulumi.Int(minClusterSize),
+				MaxSize:         pulumi.Int(maxClusterSize),
+				// OIDC provider for IAM RBAC
+				CreateOidcProvider: pulumi.BoolPtr(true),
+				// Do not give the worker nodes a public IP address
+				NodeAssociatePublicIpAddress: pulumi.BoolRef(false),
+				Tags: pulumi.StringMap{
+					"Owner":       pulumi.String(event.User),
+					"EKS cluster": pulumi.String(eksID),
+					"Created by":  pulumi.String("Dispatch"),
+				},
+			})
+			if err != nil {
+				reportErr(err, "create EKS cluster")
+			}
 
-		oidcARN := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
-			return oidc.Arn
-		}).(pulumi.StringOutput)
+			oidcARN := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
+				return oidc.Arn
+			}).(pulumi.StringOutput)
 
-		oidcPolicyURL := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
-			return pulumi.Sprintf("%v:sub", oidc.Url)
-		}).(pulumi.StringOutput)
+			oidcPolicyURL := eksCluster.Core.OidcProvider().ApplyT(func(oidc *iam.OpenIdConnectProvider) pulumi.StringOutput {
+				return pulumi.Sprintf("%v:sub", oidc.Url)
+			}).(pulumi.StringOutput)
 
-		// cert-manager IRSA
-		// cert-manager role trust policy
-		certManagerTrustPolicy := iam.GetPolicyDocumentOutput(ctx, iam.GetPolicyDocumentOutputArgs{
-			Statements: iam.GetPolicyDocumentStatementArray{
-				iam.GetPolicyDocumentStatementArgs{
-					Sid:    pulumi.String(""),
-					Effect: pulumi.String("Allow"),
-					Principals: iam.GetPolicyDocumentStatementPrincipalArray{
-						iam.GetPolicyDocumentStatementPrincipalArgs{
-							Type:        pulumi.String("Federated"),
-							Identifiers: pulumi.ToStringArrayOutput([]pulumi.StringOutput{oidcARN}),
+			// cert-manager IRSA
+			// cert-manager role trust policy
+			certManagerTrustPolicy := iam.GetPolicyDocumentOutput(ctx, iam.GetPolicyDocumentOutputArgs{
+				Statements: iam.GetPolicyDocumentStatementArray{
+					iam.GetPolicyDocumentStatementArgs{
+						Sid:    pulumi.String(""),
+						Effect: pulumi.String("Allow"),
+						Principals: iam.GetPolicyDocumentStatementPrincipalArray{
+							iam.GetPolicyDocumentStatementPrincipalArgs{
+								Type:        pulumi.String("Federated"),
+								Identifiers: pulumi.ToStringArrayOutput([]pulumi.StringOutput{oidcARN}),
+							},
 						},
-					},
-					Actions: pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("sts:AssumeRoleWithWebIdentity")}),
-					Conditions: iam.GetPolicyDocumentStatementConditionArray{
-						iam.GetPolicyDocumentStatementConditionArgs{
-							Test:     pulumi.String("StringEquals"),
-							Variable: oidcPolicyURL,
-							Values:   pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("system:serviceaccount:cert-manager:cert-manager")}),
+						Actions: pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("sts:AssumeRoleWithWebIdentity")}),
+						Conditions: iam.GetPolicyDocumentStatementConditionArray{
+							iam.GetPolicyDocumentStatementConditionArgs{
+								Test:     pulumi.String("StringEquals"),
+								Variable: oidcPolicyURL,
+								Values:   pulumi.ToStringArrayOutput([]pulumi.StringOutput{pulumi.Sprintf("system:serviceaccount:cert-manager:cert-manager")}),
+							},
 						},
 					},
 				},
-			},
-		})
+			})
+			// cert-manager Role
+			certManagerRole, err := iam.NewRole(ctx, eksID+"-cert-manager", &iam.RoleArgs{
+				AssumeRolePolicy: certManagerTrustPolicy.Json(),
+				Tags: pulumi.StringMap{
+					"Owner":       pulumi.String(event.User),
+					"EKS cluster": pulumi.String(eksID),
+					"Created by":  pulumi.String("Dispatch"),
+				},
+			})
+			if err != nil {
+				reportErr(err, "create cert-manager IAM assume role")
+			}
 
-		// cert-manager Role
-		certManagerRole, err := iam.NewRole(ctx, eksID+"-cert-manager", &iam.RoleArgs{
-			AssumeRolePolicy: certManagerTrustPolicy.Json(),
-			Tags: pulumi.StringMap{
-				"Owner":       pulumi.String(event.User),
-				"EKS cluster": pulumi.String(eksID),
-				"Created by":  pulumi.String("Dispatch"),
-			},
-		})
-		if err != nil {
-			reportErr(err, "create cert-manager IAM assume role")
-		}
+			// ACME DNS01 policy for cert-manager role
+			acmeDNS01PolicyJSON, err := json.Marshal(map[string]interface{}{
+				"Version": "2012-10-17",
+				"Statement": []map[string]interface{}{
+					{
+						"Effect": "Allow",
+						"Action": []string{
+							"route53:GetChange",
+						},
+						"Resource": "arn:aws:route53:::change/*",
+					},
+					{
+						"Effect": "Allow",
+						"Action": []string{
+							"route53:ChangeResourceRecordSets",
+							"route53:ListResourceRecordSets",
+						},
+						"Resource": "arn:aws:route53:::hostedzone/*",
+					},
+					{
+						"Effect": "Allow",
+						"Action": []string{
+							"route53:ListHostedZonesByName",
+						},
+						"Resource": "*",
+					},
+				},
+			})
+			if err != nil {
+				reportErr(err, "create cert-manager inline policy")
+			}
 
-		// ACME DNS01 policy for cert-manager role
-		acmeDNS01PolicyJSON, err := json.Marshal(map[string]interface{}{
+			acmePolicyString := string(acmeDNS01PolicyJSON)
+
+			_, err = iam.NewRolePolicy(ctx, eksID+"-acme-dns01", &iam.RolePolicyArgs{
+				Role:   certManagerRole.Name,
+				Policy: pulumi.String(acmePolicyString),
+			})
+			if err != nil {
+				reportErr(err, "create ACME DNS01 policy")
+			}
+
+			if event.Action == createAction {
+				ctx.Export("cluster", eksCluster.Core.Cluster())
+				ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
+			}
+		*/
+		tmpJSON0, err := json.Marshal(map[string]interface{}{
 			"Version": "2012-10-17",
 			"Statement": []map[string]interface{}{
-				{
+				map[string]interface{}{
+					"Action": "sts:AssumeRole",
 					"Effect": "Allow",
-					"Action": []string{
-						"route53:GetChange",
+					"Sid":    "",
+					"Principal": map[string]interface{}{
+						"Service": "ec2.amazonaws.com",
 					},
-					"Resource": "arn:aws:route53:::change/*",
-				},
-				{
-					"Effect": "Allow",
-					"Action": []string{
-						"route53:ChangeResourceRecordSets",
-						"route53:ListResourceRecordSets",
-					},
-					"Resource": "arn:aws:route53:::hostedzone/*",
-				},
-				{
-					"Effect": "Allow",
-					"Action": []string{
-						"route53:ListHostedZonesByName",
-					},
-					"Resource": "*",
 				},
 			},
 		})
 		if err != nil {
-			reportErr(err, "create cert-manager inline policy")
+			return err
 		}
-
-		acmePolicyString := string(acmeDNS01PolicyJSON)
-
-		_, err = iam.NewRolePolicy(ctx, eksID+"-acme-dns01", &iam.RolePolicyArgs{
-			Role:   certManagerRole.Name,
-			Policy: pulumi.String(acmePolicyString),
+		json0 := string(tmpJSON0)
+		_, err = iam.NewRole(ctx, "test_role", &iam.RoleArgs{
+			Name:             pulumi.String("test_role"),
+			AssumeRolePolicy: pulumi.String(json0),
+			Tags: pulumi.StringMap{
+				"tag-key": pulumi.String("tag-value"),
+			},
 		})
 		if err != nil {
-			reportErr(err, "create ACME DNS01 policy")
-		}
-
-		if event.Action == createAction {
-			ctx.Export("cluster", eksCluster.Core.Cluster())
-			ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
+			fmt.Println(err)
 		}
 
 		return nil
 	}
 
 	if event.Action == deleteAction {
-		if !clusterExists(*event) {
+		if !clusterExists(event) {
 			fmt.Printf("\n %s was not found, exiting.\n\n", event.Name)
 			os.Exit(0)
 		}
@@ -254,14 +278,20 @@ func Exec(event *Event) string {
 	projectID := event.User + "-dispatch"
 	stackID := event.Name + "-eks"
 
-	s, err := auto.UpsertStackInlineSource(ctx, stackID, projectID, deploy)
+	stackName := auto.FullyQualifiedStackName("organization", projectID, stackID)
+
+	fmt.Println(projectID)
+	fmt.Println(stackID)
+	fmt.Println(stackName)
+
+	s, err := auto.UpsertStackInlineSource(ctx, stackName, projectID, deploy)
 	if err != nil {
-		reportErr(err, "create inline source")
+		reportErr(err, "create workspace")
 	}
 
 	w := s.Workspace()
 
-	err = w.InstallPlugin(ctx, "aws", "v5.21.1")
+	err = w.InstallPlugin(ctx, "aws", "v6.32.0")
 	if err != nil {
 		reportErr(err, "install pulumi plugins")
 	}
@@ -303,21 +333,21 @@ func Exec(event *Event) string {
 	case "create":
 		stdoutStreamer := optup.ProgressStreams(os.Stdout)
 
-		res, err := s.Up(ctx, stdoutStreamer)
+		_, err := s.Up(ctx, stdoutStreamer)
 		if err != nil {
 			reportErr(err, "to update stack.")
 		}
+		/*
+			expCluster := res.Outputs["cluster"].Value.(map[string]interface{})
 
-		expCluster := res.Outputs["cluster"].Value.(map[string]interface{})
+			clusterID := getExportValue(expCluster, "id")
 
-		clusterID := getExportValue(expCluster, "id")
+			kubeConfigPath := setEKSConfig(clusterID, event.Name)
 
-		kubeConfigPath := setEKSConfig(clusterID, event.Name)
-
-		eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
-
-		fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", event.Name)
-		fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
+			eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
+			fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", event.Name)
+			fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
+		*/
 	case "delete":
 		// wire up our destroy to stream progress to stdout
 		stdoutStreamer := optdestroy.ProgressStreams(os.Stdout)
