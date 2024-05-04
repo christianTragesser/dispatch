@@ -1,27 +1,12 @@
 package dispatch
 
+/*
 import (
-	"fmt"
-	"log"
 	"strings"
 
 	"github.com/christiantragesser/dispatch/tuiaction"
 	"github.com/christiantragesser/dispatch/tuicreate"
 	"github.com/christiantragesser/dispatch/tuidelete"
-)
-
-const (
-	pulumiVersion    string = "3.114.0"
-	smallEC2         string = "t2.medium"
-	mediumEC2        string = "t2.xlarge"
-	largeEC2         string = "m4.2xlarge"
-	createAction     string = "create"
-	deleteAction     string = "delete"
-	notFound         string = "not found"
-	exitStatus       string = "exit"
-	defaultRegion    string = "us-east-1"
-	defaultScale     int    = 2
-	pulumiStacksPath string = ".pulumi/stacks/"
 )
 
 type Event struct {
@@ -65,8 +50,4 @@ func (e Event) getClusterCreationDate(bucket string, cluster string) string {
 
 	return metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"
 }
-
-func reportErr(err error, activity string) {
-	fmt.Printf(" ! Failed to %s\n\n", activity)
-	log.Fatalln(err)
-}
+*/

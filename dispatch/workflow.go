@@ -1,5 +1,6 @@
 package dispatch
 
+/*
 import (
 	"flag"
 	"fmt"
@@ -180,3 +181,4 @@ func validateClusterName(name string) (bool, error) {
 
 	return valid, err
 }
+*/

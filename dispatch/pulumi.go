@@ -1,5 +1,6 @@
 package dispatch
 
+/*
 import (
 	"context"
 	"encoding/json"
@@ -215,7 +216,6 @@ func Exec(event Event) string {
 				ctx.Export("cluster", eksCluster.Core.Cluster())
 				ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
 			}
-		*/
 		tmpJSON0, err := json.Marshal(map[string]interface{}{
 			"Version": "2012-10-17",
 			"Statement": []map[string]interface{}{
@@ -328,7 +328,6 @@ func Exec(event Event) string {
 			eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
 			fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", event.Name)
 			fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
-		*/
 	case "delete":
 		// wire up our destroy to stream progress to stdout
 		stdoutStreamer := optdestroy.ProgressStreams(os.Stdout)
@@ -354,3 +353,4 @@ func Exec(event Event) string {
 
 	return eksCertManagerRoleARN
 }
+*/
