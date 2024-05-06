@@ -341,39 +341,3 @@ func getDispatchUserID(configFile string) (string, error) {
 
 	return configMap["uid"], nil
 }
-
-func clearKubeConfig() {
-	home, homeSet := os.LookupEnv("HOME")
-
-	if homeSet {
-		configFile := filepath.Join(home, ".dispatch", ".kube", "config")
-
-		_, readErr := os.Stat(configFile)
-
-		if os.IsNotExist(readErr) {
-			fmt.Printf("\nkubeconfig (%s) not found\n", configFile)
-		} else {
-			cleanConfig := kubeconfigFile{
-				APIVersion:     "v1",
-				Kind:           "Config",
-				CurrentContext: "",
-				Clusters:       []map[string]string{},
-				Contexts:       []map[string]string{},
-				Users:          []map[string]string{},
-				Preferences:    map[string]string{},
-			}
-
-			configData, err := yaml.Marshal(cleanConfig)
-			if err != nil {
-				log.Error("construct clean kubeconfig")
-			}
-
-			writeErr := os.WriteFile(configFile, configData, fs.FileMode(privMode))
-			if writeErr != nil {
-				log.Error("write clean kubeconfig")
-			}
-		}
-	} else {
-		log.Error("$HOME environment variable not found, exiting.\n")
-	}
-}

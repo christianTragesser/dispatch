@@ -1,5 +1,6 @@
 package tuidelete
 
+/*
 import (
 	"fmt"
 	"os"
@@ -75,3 +76,4 @@ func SelectCluster(clusters []map[string]string) string {
 
 	return option
 }
+*/

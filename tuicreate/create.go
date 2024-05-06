@@ -1,5 +1,6 @@
 package tuicreate
 
+/*
 import (
 	"fmt"
 	"os"
@@ -174,3 +175,4 @@ func Create() []string {
 
 	return eventOptions
 }
+*/

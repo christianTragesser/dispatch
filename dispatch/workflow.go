@@ -155,30 +155,4 @@ func TUIWorkflow(te TUIEventAPI, event Event) Event {
 
 	return event
 }
-
-func clusterExists(event Event) bool {
-	stackID := event.Name + "-eks"
-
-	clusters := listExistingClusters(event.Bucket)
-
-	for _, cluster := range clusters {
-		if strings.Contains(cluster, stackID) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func validateClusterName(name string) (bool, error) {
-	var err error
-
-	valid := regexp.MustCompile(`^[a-zA-Z][-a-zA-Z0-9]*`).MatchString(name)
-
-	if !valid {
-		err = fmt.Errorf("cluster name '%s' is invalid (^[a-zA-Z][-a-zA-Z0-9]*)\ncluster name must begin with a letter", name)
-	}
-
-	return valid, err
-}
 */

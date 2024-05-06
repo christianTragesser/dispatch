@@ -1,5 +1,6 @@
 package tuiaction
 
+/*
 import (
 	"fmt"
 	"io"
@@ -135,3 +136,4 @@ func Action() string {
 
 	return option
 }
+*/

@@ -25,6 +25,7 @@ const (
 	pulumiStacksPath string = ".pulumi/stacks/"
 )
 
+var version = "dev-build"
 var log = getLogger()
 
 func getLogger() *slog.Logger {
@@ -41,7 +42,7 @@ type Instance struct {
 	Home     workspace
 }
 
-func (i Instance) SetWorkspace() (workspace, error) {
+func (i Instance) setWorkspace() (workspace, error) {
 	dw, err := i.Home.createWorkspace()
 	if err != nil {
 		return i.Home, err
@@ -50,7 +51,7 @@ func (i Instance) SetWorkspace() (workspace, error) {
 	return dw, nil
 }
 
-func (i Instance) TestCredentials() error {
+func (i Instance) testCredentials() error {
 	clientConfig := awsClientConfig()
 
 	err := testIAM(clientConfig)
@@ -65,7 +66,7 @@ func (i Instance) TestCredentials() error {
 
 }
 
-func (i Instance) SetBucket() (string, error) {
+func (i Instance) setBucket() (string, error) {
 	clientConfig := awsClientConfig()
 
 	accountNumber, err := getAccountNumber(clientConfig)
@@ -114,7 +115,7 @@ func (i Instance) SetBucket() (string, error) {
 	return bucketName, nil
 }
 
-func (i Instance) ListExistingClusters() error {
+func (i Instance) getExistingClusters() ([]string, error) {
 	var clusters []string
 	clientConfig := awsClientConfig()
 
@@ -128,7 +129,7 @@ func (i Instance) ListExistingClusters() error {
 	objects, err := s3Client.ListObjectsV2(context.TODO(), listConfig)
 	if err != nil {
 		log.Error("Failed to list items in dispatch state store.")
-		return err
+		return clusters, err
 	}
 
 	if len(objects.Contents) > 0 {
@@ -139,13 +140,43 @@ func (i Instance) ListExistingClusters() error {
 		}
 	} else {
 		fmt.Println(" . No existing clusters found")
-		return nil
+		return clusters, nil
 	}
 
-	fmt.Println(" . Existing clusters:")
-	for _, item := range clusters {
-		fmt.Printf("\t <> %s \n", item)
+	return clusters, nil
+}
+
+func (i Instance) InitInstance() (Instance, error) {
+	ws, err := i.setWorkspace()
+	if err != nil {
+		return i, err
 	}
 
-	return nil
+	i.Home = ws
+
+	err = i.testCredentials()
+	if err != nil {
+		return i, err
+	}
+
+	i.Bucket, err = i.setBucket()
+	if err != nil {
+		return i, err
+	}
+
+	clusters, err := i.getExistingClusters()
+	if err != nil {
+		return i, err
+	}
+
+	if len(clusters) > 0 {
+		fmt.Println(" . Existing clusters:")
+		for _, item := range clusters {
+			fmt.Printf("\t <> %s \n", item)
+		}
+	} else {
+		fmt.Println(" . No existing clusters found")
+	}
+
+	return i, nil
 }
