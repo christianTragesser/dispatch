@@ -92,8 +92,6 @@ Usage of create:
     	cluster node count (default "2")
   -size string
     	cluster node size (default "small")
-  -version string
-    	Kubernetes version (default "1.24")
   -yes
     	skip verification prompt for cluster creation
 ```
