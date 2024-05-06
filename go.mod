@@ -8,6 +8,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.32.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6
+	github.com/charmbracelet/bubbles v0.18.0
+	github.com/charmbracelet/bubbletea v0.25.0
+	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.33.1
 	github.com/pulumi/pulumi/sdk/v3 v3.114.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -37,9 +40,6 @@ require (
 	github.com/aws/smithy-go v1.20.2 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/charmbracelet/bubbles v0.18.0 // indirect
-	github.com/charmbracelet/bubbletea v0.25.0 // indirect
-	github.com/charmbracelet/lipgloss v0.10.0 // indirect
 	github.com/cheggaaa/pb v1.0.29 // indirect
 	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/containerd/console v1.0.4 // indirect
@@ -83,6 +83,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
+	github.com/sahilm/fuzzy v0.1.1-0.20230530133925-c48e322e2a8f // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.2.2 // indirect

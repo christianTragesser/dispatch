@@ -35,23 +35,25 @@ func main() {
 			fmt.Println(err)
 			os.Exit(0)
 		}
-	}
-	/*
-		else {
-			// use TUI workflow
-			fmt.Print(asciiArt)
-
-			sessionEvent = dispatch.EnsureDependencies(sessionEvent)
-
-			TUIAPI := dispatch.Event{}
-
-			sessionEvent = dispatch.TUIWorkflow(TUIAPI, sessionEvent)
-
-			if sessionEvent.Action == "exit" {
-				os.Exit(0)
-			}
+	} else {
+		// use TUI workflow
+		fmt.Print(asciiArt)
+		session, err := instance.InitInstance()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(0)
 		}
 
-		dispatch.Exec(sessionEvent)
-	*/
+		session, err = session.TUIWorkflow()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+
+		_, err = session.PulumiExec()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+	}
 }

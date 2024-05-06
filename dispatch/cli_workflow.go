@@ -61,7 +61,7 @@ func (i Instance) CLIWorkflow() (Instance, error) {
 		fmt.Printf("Dispatch version: %s\n", version)
 		os.Exit(0)
 
-	case "create":
+	case createAction:
 		s, err := i.cliCreate()
 		if err != nil {
 			return s, err
@@ -79,7 +79,7 @@ func (i Instance) CLIWorkflow() (Instance, error) {
 		}
 		return s, err
 
-	case "delete":
+	case deleteAction:
 		s, err := i.cliDelete()
 		if err != nil {
 			return s, err

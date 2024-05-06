@@ -19,6 +19,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type kubeconfigFile struct {
+	APIVersion     string              `yaml:"apiVersion"`
+	Kind           string              `yaml:"kind"`
+	CurrentContext string              `yaml:"current-context"`
+	Preferences    map[string]string   `yaml:"preferences"`
+	Clusters       []map[string]string `yaml:"clusters"`
+	Users          []map[string]string `yaml:"users"`
+	Contexts       []map[string]string `yaml:"contexts"`
+}
+
 func (i Instance) setPulumiEngine() error {
 	fmt.Println("\nPulumi login to S3 backend....")
 

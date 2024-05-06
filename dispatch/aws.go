@@ -155,7 +155,6 @@ func createStateBucket(clientConfig aws.Config, bucketName string) {
 	}
 }
 
-/*
 func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, error) {
 	clientConfig := awsClientConfig()
 	s3Client := s3.NewFromConfig(*clientConfig)
@@ -167,4 +166,3 @@ func getObjectMetadata(bucket string, cluster string) (*s3.HeadObjectOutput, err
 
 	return s3Client.HeadObject(context.TODO(), input)
 }
-*/

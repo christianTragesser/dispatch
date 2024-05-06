@@ -20,16 +20,6 @@ const binMode int = 0755
 const privMode int = 0600
 const pubMode int = 0644
 
-type kubeconfigFile struct {
-	APIVersion     string              `yaml:"apiVersion"`
-	Kind           string              `yaml:"kind"`
-	CurrentContext string              `yaml:"current-context"`
-	Preferences    map[string]string   `yaml:"preferences"`
-	Clusters       []map[string]string `yaml:"clusters"`
-	Users          []map[string]string `yaml:"users"`
-	Contexts       []map[string]string `yaml:"contexts"`
-}
-
 type workspace struct {
 	root       string
 	kubeDir    string
