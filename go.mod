@@ -12,6 +12,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.33.1
+	github.com/pulumi/pulumi-awsx/sdk/v2 v2.9.0
 	github.com/pulumi/pulumi/sdk/v3 v3.114.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -80,6 +81,7 @@ require (
 	github.com/pkg/term v1.1.0 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.8.3 // indirect
+	github.com/pulumi/pulumi-docker/sdk/v4 v4.4.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect

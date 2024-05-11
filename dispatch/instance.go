@@ -146,6 +146,21 @@ func (i Instance) getExistingClusters() ([]string, error) {
 	return clusters, nil
 }
 
+func (i Instance) getEC2Type() (string, error) {
+	size := strings.ToUpper(i.Size)
+
+	switch size {
+	case "SMALL", "S":
+		return smallEC2, nil
+	case "MEDIUM", "M":
+		return mediumEC2, nil
+	case "LARGE", "L":
+		return largeEC2, nil
+	default:
+		return "", fmt.Errorf("invalid node size: %s", size)
+	}
+}
+
 func (i Instance) InitInstance() (Instance, error) {
 	ws, err := i.setWorkspace()
 	if err != nil {
