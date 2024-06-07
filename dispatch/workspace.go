@@ -3,6 +3,7 @@ package dispatch
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -104,8 +105,13 @@ func (w workspace) installPulumi() error {
 		return nil
 	}
 
-	if runtime.GOARCH == "amd64" {
+	switch runtime.GOARCH {
+	case "amd64":
 		architecture = "x64"
+	case "arm64":
+		architecture = "arm64"
+	default:
+		return errors.New("unsupported architecture")
 	}
 
 	baseURL := "https://github.com/pulumi/pulumi/releases/download/v" + pulumiVersion + "/"
