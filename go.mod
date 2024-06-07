@@ -1,6 +1,8 @@
 module github.com/christiantragesser/dispatch
 
-go 1.21
+go 1.21.5
+
+toolchain go1.21.9
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.26.1
@@ -13,6 +15,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.33.1
 	github.com/pulumi/pulumi-awsx/sdk/v2 v2.9.0
+	github.com/pulumi/pulumi-tls/sdk/v4 v4.11.1
 	github.com/pulumi/pulumi/sdk/v3 v3.114.0
 	gopkg.in/yaml.v3 v3.0.1
 )

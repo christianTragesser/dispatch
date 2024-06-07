@@ -67,7 +67,7 @@ func (i Instance) PulumiExec() (string, error) {
 		return "", err
 	}
 
-	// deploy defines AWS resources managed by pulumi
+	// Declares AWS resources managed by pulumi
 	deploy := func(ctx *pulumi.Context) error {
 		eksID := strings.ReplaceAll(i.Name, ".", "-")
 
@@ -85,7 +85,7 @@ func (i Instance) PulumiExec() (string, error) {
 			return err
 		}
 
-		// Attach EKS policies to the IAM role
+		// Attach EKS policies to the EKS cluster IAM role
 		eksPolicies := []string{
 			"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
 			"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
@@ -108,7 +108,7 @@ func (i Instance) PulumiExec() (string, error) {
 			return err
 		}
 
-		// Attach NodeGroup policies to the IAM role
+		// Attach NodeGroup policies to the EC2 NodeGroup IAM role
 		nodeGroupPolicies := []string{
 			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
@@ -132,19 +132,21 @@ func (i Instance) PulumiExec() (string, error) {
 			return err
 		}
 
-		// Create a new EKS cluster which uses the IAM role created above
+		// Create a new EKS cluster
 		eksCluster, err := infra.GetEKS(ctx, eksVPC, eksClusterRole, eksID, clusterAccessSG)
 		if err != nil {
 			log.Error("Failed to create EKS cluster")
 			return err
 		}
 
+		// Set EKS node instance type
 		eksNodeInstanceType, err := i.getEC2Type()
 		if err != nil {
 			log.Error("get node instance type")
 			return err
 		}
 
+		// Create a EKS NodeGroup
 		_, err = infra.GetClusterNodeGroup(ctx, eksID,
 			eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
 		if err != nil {
@@ -152,55 +154,22 @@ func (i Instance) PulumiExec() (string, error) {
 			return err
 		}
 		/*
-			certManagerRole, err := infra.GetCertManagerRole(ctx, user, eksID)
-
-			// ACME DNS01 policy for cert-manager role
-			acmeDNS01PolicyJSON, err := json.Marshal(map[string]interface{}{
-				"Version": "2012-10-17",
-				"Statement": []map[string]interface{}{
-					{
-						"Effect": "Allow",
-						"Action": []string{
-							"route53:GetChange",
-						},
-						"Resource": "arn:aws:route53:::change/*",
-					},
-					{
-						"Effect": "Allow",
-						"Action": []string{
-							"route53:ChangeResourceRecordSets",
-							"route53:ListResourceRecordSets",
-						},
-						"Resource": "arn:aws:route53:::hostedzone/*",
-					},
-					{
-						"Effect": "Allow",
-						"Action": []string{
-							"route53:ListHostedZonesByName",
-						},
-						"Resource": "*",
-					},
-				},
-			})
+			// Create cert-manager IAM role
+			certManagerRole, err := infra.GetCertManagerRole(ctx, eksCluster, user, eksID)
 			if err != nil {
-				log.Error("create cert-manager inline policy")
+				log.Error("Failed to create cert manager role")
+				return err
 			}
 
-			acmePolicyString := string(acmeDNS01PolicyJSON)
-
-			_, err = iam.NewRolePolicy(ctx, eksID+"-acme-dns01", &iam.RolePolicyArgs{
-				Role:   certManagerRole.Name,
-				Policy: pulumi.String(acmePolicyString),
-			})
+			// ACME DNS01 policy for cert-manager role
+			_, err = infra.GetACMEPolicy(ctx, eksID, certManagerRole)
 			if err != nil {
-				log.Error("create ACME DNS01 policy")
+				log.Error("create cert-manager inline policy")
+				return err
 			}
 		*/
 		if i.Action == createAction {
 			ctx.Export("cluster", eksCluster.ClusterId)
-			ctx.Export("kubeconfig", generateKubeconfig(eksCluster.Endpoint,
-				eksCluster.CertificateAuthority.Data().Elem(), eksCluster.Name))
-			//ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
 		}
 
 		return nil
@@ -240,6 +209,7 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 	}
 
+	// Setup Pulumi auto API
 	err = i.setPulumiEngine()
 	if err != nil {
 		return "", err
@@ -252,6 +222,7 @@ func (i Instance) PulumiExec() (string, error) {
 
 	stackName := auto.FullyQualifiedStackName("organization", projectID, stackID)
 
+	// Declared Pulumi payload
 	runDeploy := pulumi.RunFunc(deploy)
 
 	s, err := auto.UpsertStackInlineSource(ctx, stackName, projectID, runDeploy)
@@ -281,33 +252,31 @@ func (i Instance) PulumiExec() (string, error) {
 
 	switch i.Action {
 	case createAction:
+		// Wire up create action for progress stream to stdout
 		stdoutStreamer := optup.ProgressStreams(os.Stdout)
 
-		res, err := s.Up(ctx, stdoutStreamer)
+		// Create the declared Pulumi stack
+		_, err := s.Up(ctx, stdoutStreamer)
 		if err != nil {
 			log.Error("Failed to update stack.")
 			return eksCertManagerRoleARN, err
 		}
-		expCluster := res.Outputs["cluster"].Value.(map[string]interface{})
 
-		clusterID, err := getExportValue(expCluster, "id")
+		// Set EKS kubeconfig
+		kubeConfigPath, err := i.setEKSConfig()
 		if err != nil {
 			return "", err
 		}
 
-		kubeConfigPath, err := i.setEKSConfig(clusterID)
-		if err != nil {
-			return "", err
-		}
-
-		eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
+		//eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
 		fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", i.Name)
 		fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
+
 	case deleteAction:
-		// wire up our destroy to stream progress to stdout
+		// Wire up delete action for progress stream to stdout
 		stdoutStreamer := optdestroy.ProgressStreams(os.Stdout)
 
-		// destroy our stack and exit early
+		// Destroy the declared Pulumi stack
 		_, err := s.Destroy(ctx, stdoutStreamer)
 		if err != nil {
 			fmt.Printf("Failed to destroy stack: %v", err)
@@ -347,15 +316,15 @@ func (i Instance) clusterExists() (bool, error) {
 	return false, nil
 }
 
-func (i Instance) setEKSConfig(clusterID string) (string, error) {
+func (i Instance) setEKSConfig() (string, error) {
 	kubeconfigPath := filepath.Join(i.Home.kubeDir, "config")
 	os.Setenv("KUBECONFIG", kubeconfigPath)
 
 	region := setAWSRegion()
 
 	cmd := exec.Command(
-		"aws", "eks", "--region", region,
-		"update-kubeconfig", "--name", clusterID,
+		"aws", "eks", "update-kubeconfig",
+		"--region", region, "--name", i.Name,
 		"--alias", i.Name,
 	)
 
@@ -366,7 +335,7 @@ func (i Instance) setEKSConfig(clusterID string) (string, error) {
 	}
 
 	if err := cmd.Start(); err != nil {
-		log.Error("Failed to start AWS EKS command")
+		log.Error("Get EKS kubeconfig command failed")
 		return "", err
 	}
 
@@ -384,56 +353,4 @@ func (i Instance) setEKSConfig(clusterID string) (string, error) {
 	fmt.Println(string(data))
 
 	return kubeconfigPath, nil
-}
-
-func getExportValue(export map[string]interface{}, field string) (string, error) {
-	resource := make(map[string]string)
-
-	for k, v := range export {
-		switch v.(type) {
-		case string:
-			resource[k] = fmt.Sprintf("%v", v)
-		default:
-			return "", fmt.Errorf("failed to determine value type")
-		}
-	}
-
-	return resource[field], nil
-}
-
-// Create the KubeConfig Structure as per https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
-func generateKubeconfig(clusterEndpoint pulumi.StringOutput, certData pulumi.StringOutput, clusterName pulumi.StringOutput) pulumi.StringOutput {
-	return pulumi.Sprintf(`{
-        "apiVersion": "v1",
-        "clusters": [{
-            "cluster": {
-                "server": "%s",
-                "certificate-authority-data": "%s"
-            },
-            "name": "kubernetes",
-        }],
-        "contexts": [{
-            "context": {
-                "cluster": "kubernetes",
-                "user": "aws",
-            },
-            "name": "aws",
-        }],
-        "current-context": "aws",
-        "kind": "Config",
-        "users": [{
-            "name": "aws",
-            "user": {
-                "exec": {
-                    "apiVersion": "client.authentication.k8s.io/v1beta1",
-                    "command": "aws-iam-authenticator",
-                    "args": [
-                        "token",
-                        "-i",
-                        "%s",
-                    ],
-                },
-            },
-        }],
-    }`, clusterEndpoint, certData, clusterName)
 }
