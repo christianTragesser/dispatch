@@ -187,7 +187,10 @@ func (i Instance) InitInstance() (Instance, error) {
 	if len(clusters) > 0 {
 		fmt.Println(" . Existing clusters:")
 		for _, item := range clusters {
-			fmt.Printf("\t <> %s \n", item)
+			p := strings.Split(item, "/")
+			f := p[len(p)-1]
+			c := strings.TrimSuffix(f, "-eks.json")
+			fmt.Printf("\t -o- %s \n", c)
 		}
 	} else {
 		fmt.Println(" . No existing clusters found")
