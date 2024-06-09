@@ -65,6 +65,42 @@ func GetNodeGroupRole(ctx *pulumi.Context, eksID string) (*iam.Role, error) {
 	return nodeGroupRole, nil
 }
 
+func GetEBSCSIDriverRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, eksID string, accountNumber string) (*iam.Role, error) {
+	oidcIssuerURL := cluster.Identities.Index(pulumi.Int(0)).Oidcs().Index(pulumi.Int(0)).Issuer()
+
+	policy := pulumi.Sprintf(`{
+		"Version": "2012-10-17",
+		"Statement": [
+		  {
+			"Effect": "Allow",
+			"Principal": {
+			  "Federated": "arn:aws:iam::%s:oidc-provider/%s"
+			},
+			"Action": "sts:AssumeRoleWithWebIdentity",
+			"Condition": {
+			  "StringEquals": {
+				"%s:aud": "sts.amazonaws.com",
+				"%s:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+			  }
+			}
+		  }
+		]
+	  }`, accountNumber, oidcIssuerURL, oidcIssuerURL, oidcIssuerURL)
+
+	ebcDriverRole, err := iam.NewRole(ctx, eksID+"-ebc-driver-role", &iam.RoleArgs{
+		AssumeRolePolicy: policy,
+		Tags: pulumi.StringMap{
+			"Owner":       pulumi.String(user),
+			"EKS cluster": pulumi.String(eksID),
+			"Created by":  pulumi.String("Dispatch"),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ebcDriverRole, nil
+}
+
 func GetCertManagerRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, eksID string) (*iam.Role, error) {
 	var certManagerRole *iam.Role
 	/*

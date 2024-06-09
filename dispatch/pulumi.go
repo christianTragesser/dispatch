@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/christiantragesser/dispatch/infra"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
@@ -151,6 +152,37 @@ func (i Instance) PulumiExec() (string, error) {
 			eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
 		if err != nil {
 			log.Error("Failed to create node group")
+			return err
+		}
+
+		clientConfig := awsClientConfig()
+		accountNumber, err := getAccountNumber(clientConfig)
+		if err != nil {
+			return err
+		}
+
+		eksEBSCSIDriverRole, err := infra.GetEBSCSIDriverRole(ctx, eksCluster, user, eksID, accountNumber)
+		if err != nil {
+			log.Error("Failed to create EKS EBS CSI driver role")
+			return err
+		}
+
+		_, err = iam.NewRolePolicyAttachment(ctx, eksID+"ebscsi", &iam.RolePolicyAttachmentArgs{
+			Role:      eksEBSCSIDriverRole.Name,
+			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"),
+		})
+		if err != nil {
+			log.Error("Failed to attach node group policy")
+			return err
+		}
+
+		_, err = eks.NewAddon(ctx, eksID+"aws-ebs-csi-driver", &eks.AddonArgs{
+			ClusterName:              eksCluster.Name,
+			AddonName:                pulumi.String("aws-ebs-csi-driver"),
+			AddonVersion:             pulumi.String("v1.31.0"),
+			ResolveConflictsOnUpdate: pulumi.String("PRESERVE"),
+		})
+		if err != nil {
 			return err
 		}
 		/*
