@@ -102,30 +102,6 @@ func (i Instance) PulumiExec() (string, error) {
 			}
 		}
 
-		// Create an EC2 NodeGroup IAM role
-		nodeGroupRole, err := infra.GetNodeGroupRole(ctx, eksID)
-		if err != nil {
-			log.Error("Failed to create node group role")
-			return err
-		}
-
-		// Attach NodeGroup policies to the EC2 NodeGroup IAM role
-		nodeGroupPolicies := []string{
-			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-		}
-		for i, nodeGroupPolicy := range nodeGroupPolicies {
-			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("ngpa-%d", i), &iam.RolePolicyAttachmentArgs{
-				Role:      nodeGroupRole.Name,
-				PolicyArn: pulumi.String(nodeGroupPolicy),
-			})
-			if err != nil {
-				log.Error("Failed to attach node group policies")
-				return err
-			}
-		}
-
 		// Create cluster API access security group
 		clusterAccessSG, err := infra.GetClusterAccessSG(ctx, eksVPC)
 		if err != nil {
@@ -138,6 +114,37 @@ func (i Instance) PulumiExec() (string, error) {
 		if err != nil {
 			log.Error("Failed to create EKS cluster")
 			return err
+		}
+
+		clientConfig := awsClientConfig()
+		accountNumber, err := getAccountNumber(clientConfig)
+		if err != nil {
+			return err
+		}
+
+		// Create an EC2 NodeGroup IAM role
+		nodeGroupRole, err := infra.GetNodeGroupRole(ctx, eksCluster, user, eksID, accountNumber)
+		if err != nil {
+			log.Error("Failed to create node group role")
+			return err
+		}
+
+		// Attach NodeGroup policies to the EC2 NodeGroup IAM role
+		nodeGroupPolicies := []string{
+			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+			"arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy",
+		}
+		for i, nodeGroupPolicy := range nodeGroupPolicies {
+			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("ngpa-%d", i), &iam.RolePolicyAttachmentArgs{
+				Role:      nodeGroupRole.Name,
+				PolicyArn: pulumi.String(nodeGroupPolicy),
+			})
+			if err != nil {
+				log.Error("Failed to attach node group policies")
+				return err
+			}
 		}
 
 		// Set EKS node instance type
@@ -155,31 +162,10 @@ func (i Instance) PulumiExec() (string, error) {
 			return err
 		}
 
-		clientConfig := awsClientConfig()
-		accountNumber, err := getAccountNumber(clientConfig)
-		if err != nil {
-			return err
-		}
-
-		eksEBSCSIDriverRole, err := infra.GetEBSCSIDriverRole(ctx, eksCluster, user, eksID, accountNumber)
-		if err != nil {
-			log.Error("Failed to create EKS EBS CSI driver role")
-			return err
-		}
-
-		_, err = iam.NewRolePolicyAttachment(ctx, eksID+"ebscsi", &iam.RolePolicyAttachmentArgs{
-			Role:      eksEBSCSIDriverRole.Name,
-			PolicyArn: pulumi.String("arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"),
-		})
-		if err != nil {
-			log.Error("Failed to attach node group policy")
-			return err
-		}
-
 		_, err = eks.NewAddon(ctx, eksID+"aws-ebs-csi-driver", &eks.AddonArgs{
 			ClusterName:              eksCluster.Name,
 			AddonName:                pulumi.String("aws-ebs-csi-driver"),
-			AddonVersion:             pulumi.String("v1.31.0"),
+			AddonVersion:             pulumi.String("v1.31.0-eksbuild.1"),
 			ResolveConflictsOnUpdate: pulumi.String("PRESERVE"),
 		})
 		if err != nil {

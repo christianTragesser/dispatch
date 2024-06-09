@@ -1,8 +1,6 @@
 package infra
 
 import (
-	"encoding/json"
-
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -36,24 +34,40 @@ func GetClusterRole(ctx *pulumi.Context, user string, eksID string) (*iam.Role, 
 	return eksClusterRole, nil
 }
 
-func GetNodeGroupRole(ctx *pulumi.Context, eksID string) (*iam.Role, error) {
+func GetNodeGroupRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, eksID string, accountNumber string) (*iam.Role, error) {
+	issuerURL := cluster.Identities.Index(pulumi.Int(0)).Oidcs().Index(pulumi.Int(0)).Issuer()
+
+	policy := pulumi.Sprintf(`{
+		"Version": "2012-10-17",
+		"Statement": [
+		    {
+		    	"Sid": "",
+		    	"Effect": "Allow",
+		    	"Principal": {
+		    		"Service": "ec2.amazonaws.com"
+		    	},
+		    	"Action": "sts:AssumeRole"
+		    },
+		    {
+		        "Effect": "Allow",
+		        "Principal": {
+		            "Federated": "arn:aws:iam::%s:oidc-provider/%s"
+				},
+		        "Condition": {
+		            "StringEquals": {
+		                "%s:aud": "sts.amazonaws.com",
+		                "%s:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+		            }
+		        },
+		        "Action": "sts:AssumeRoleWithWebIdentity"
+		    }
+	    ]
+	}`, accountNumber, issuerURL, issuerURL, issuerURL)
 
 	nodeGroupRole, err := iam.NewRole(ctx, eksID+"-nodegroup-role", &iam.RoleArgs{
-		AssumeRolePolicy: pulumi.String(`{
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Sid": "",
-						"Effect": "Allow",
-						"Principal": {
-							"Service": "ec2.amazonaws.com"
-						},
-						"Action": "sts:AssumeRole"
-					}
-				]
-			}`),
+		AssumeRolePolicy: policy,
 		Tags: pulumi.StringMap{
-			"Owner":       pulumi.String("dispatch"),
+			"Owner":       pulumi.String(user),
 			"EKS cluster": pulumi.String(eksID),
 			"Created by":  pulumi.String("Dispatch"),
 		},
@@ -65,45 +79,9 @@ func GetNodeGroupRole(ctx *pulumi.Context, eksID string) (*iam.Role, error) {
 	return nodeGroupRole, nil
 }
 
-func GetEBSCSIDriverRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, eksID string, accountNumber string) (*iam.Role, error) {
-	oidcIssuerURL := cluster.Identities.Index(pulumi.Int(0)).Oidcs().Index(pulumi.Int(0)).Issuer()
-
-	policy := pulumi.Sprintf(`{
-		"Version": "2012-10-17",
-		"Statement": [
-		  {
-			"Effect": "Allow",
-			"Principal": {
-			  "Federated": "arn:aws:iam::%s:oidc-provider/%s"
-			},
-			"Action": "sts:AssumeRoleWithWebIdentity",
-			"Condition": {
-			  "StringEquals": {
-				"%s:aud": "sts.amazonaws.com",
-				"%s:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-			  }
-			}
-		  }
-		]
-	  }`, accountNumber, oidcIssuerURL, oidcIssuerURL, oidcIssuerURL)
-
-	ebcDriverRole, err := iam.NewRole(ctx, eksID+"-ebc-driver-role", &iam.RoleArgs{
-		AssumeRolePolicy: policy,
-		Tags: pulumi.StringMap{
-			"Owner":       pulumi.String(user),
-			"EKS cluster": pulumi.String(eksID),
-			"Created by":  pulumi.String("Dispatch"),
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ebcDriverRole, nil
-}
-
+/*
 func GetCertManagerRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, eksID string) (*iam.Role, error) {
 	var certManagerRole *iam.Role
-	/*
 		oidcIssuerURL := cluster.Identities.ApplyT(func(identities []eks.ClusterIdentity) (pulumi.StringOutput, error) {
 			return pulumi.Sprintf("%v:sub", identities[0].Oidcs[0].Issuer), nil
 		}).(pulumi.StringOutput)
@@ -130,8 +108,6 @@ func GetCertManagerRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, 
 		if err != nil {
 			return nil, err
 		}
-	*/
-	/*
 		oidcIssuerURL := cluster.Identities.Index(pulumi.Int(0)).Oidcs().Index(pulumi.Int(0)).Issuer()
 		callerIdentity, err := sts.GetCallerIdentity(ctx)
 		if err != nil {
@@ -190,7 +166,6 @@ func GetCertManagerRole(ctx *pulumi.Context, cluster *eks.Cluster, user string, 
 			return nil, err
 		}
 
-	*/
 	return certManagerRole, nil
 }
 
@@ -239,7 +214,6 @@ func GetACMEPolicy(ctx *pulumi.Context, eksID string, certManagerRole *iam.Role)
 	return acmePolicy, nil
 }
 
-/*
 	func getCertThumbprint() (string, error) {
 		// Replace with the URL of your OIDC Identity Provider's metadata document
 		metadataURL := "https://example.com/.well-known/openid-configuration"
@@ -289,7 +263,6 @@ func GetACMEPolicy(ctx *pulumi.Context, eksID string, certManagerRole *iam.Role)
 
 		return thumbprint, nil
 	}
-*/
 func getTestRole(ctx *pulumi.Context, name string) (*iam.Role, error) {
 	tmpJSON0, err := json.Marshal(map[string]interface{}{
 		"Version": "2012-10-17",
@@ -321,3 +294,4 @@ func getTestRole(ctx *pulumi.Context, name string) (*iam.Role, error) {
 
 	return testRole, nil
 }
+*/
