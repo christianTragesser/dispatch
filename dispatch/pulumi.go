@@ -155,8 +155,7 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 
 		// Create a EKS NodeGroup
-		_, err = infra.GetClusterNodeGroup(ctx, eksID,
-			eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
+		_, err = infra.GetClusterNodeGroup(ctx, eksID, eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
 		if err != nil {
 			log.Error("Failed to create node group")
 			return err
@@ -171,23 +170,24 @@ func (i Instance) PulumiExec() (string, error) {
 		if err != nil {
 			return err
 		}
-		/*
-			// Create cert-manager IAM role
-			certManagerRole, err := infra.GetCertManagerRole(ctx, eksCluster, user, eksID)
-			if err != nil {
-				log.Error("Failed to create cert manager role")
-				return err
-			}
 
-			// ACME DNS01 policy for cert-manager role
-			_, err = infra.GetACMEPolicy(ctx, eksID, certManagerRole)
-			if err != nil {
-				log.Error("create cert-manager inline policy")
-				return err
-			}
-		*/
+		// Create cert-manager IAM role
+		certManagerRole, err := infra.GetCertManagerRole(ctx, eksCluster, user, eksID, accountNumber)
+		if err != nil {
+			log.Error("Failed to create cert manager role")
+			return err
+		}
+
+		// Attach ACME DNS01 policy to the cert-manager IAM role
+		err = infra.AttachACMEPolicy(ctx, certManagerRole, user, eksID)
+		if err != nil {
+			log.Error("Failed to attach route53 policy")
+			return err
+		}
+
 		if i.Action == createAction {
-			ctx.Export("cluster", eksCluster.ClusterId)
+			ctx.Export("cluster-id", eksCluster.ClusterId)
+			ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
 		}
 
 		return nil
