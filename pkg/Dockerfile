@@ -1,5 +1,4 @@
 FROM docker.io/library/golang:alpine AS source
-
 WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
 ADD go.mod .
 ADD go.sum .
@@ -7,6 +6,7 @@ ADD main.go .
 ADD .goreleaser.yaml .
 COPY .git ./.git
 COPY dispatch ./dispatch
+COPY infra ./infra
 COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
 COPY tuidelete ./tuidelete
