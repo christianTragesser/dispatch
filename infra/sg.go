@@ -10,8 +10,8 @@ const (
 	defaultIngressPort int = 80
 )
 
-func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc) (*sg.SecurityGroup, error) {
-	clusterSg, err := sg.NewSecurityGroup(ctx, "cluster-sg", &sg.SecurityGroupArgs{
+func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc, user string, eksID string) (*sg.SecurityGroup, error) {
+	clusterSg, err := sg.NewSecurityGroup(ctx, eksID+"cluster-sg", &sg.SecurityGroupArgs{
 		VpcId: vpc.VpcId.ToStringPtrOutput(),
 		Egress: sg.SecurityGroupEgressArray{
 			sg.SecurityGroupEgressArgs{
@@ -28,6 +28,11 @@ func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc) (*sg.SecurityGroup, e
 				ToPort:     pulumi.Int(defaultIngressPort),
 				CidrBlocks: pulumi.StringArray{pulumi.String("0.0.0.0/0")},
 			},
+		},
+		Tags: pulumi.StringMap{
+			"Owner":       pulumi.String(user),
+			"EKS cluster": pulumi.String(eksID),
+			"Created by":  pulumi.String("Dispatch"),
 		},
 	})
 	if err != nil {

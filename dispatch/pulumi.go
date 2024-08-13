@@ -95,7 +95,7 @@ func (i Instance) PulumiExec() (string, error) {
 			"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 		}
 		for i, eksPolicy := range eksPolicies {
-			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("rpa-%d", i), &iam.RolePolicyAttachmentArgs{
+			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("rpa-%d-%s", i, eksID), &iam.RolePolicyAttachmentArgs{
 				PolicyArn: pulumi.String(eksPolicy),
 				Role:      eksClusterRole.Name,
 			})
@@ -106,14 +106,14 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 
 		// Create cluster API access security group
-		clusterAccessSG, err := infra.GetClusterAccessSG(ctx, eksVPC)
+		clusterAccessSG, err := infra.GetClusterAccessSG(ctx, eksVPC, user, eksID)
 		if err != nil {
 			log.Error("Failed to create cluster access security group")
 			return err
 		}
 
 		// Create a new EKS cluster
-		eksCluster, err := infra.GetEKS(ctx, eksVPC, eksClusterRole, eksID, clusterAccessSG)
+		eksCluster, err := infra.GetEKS(ctx, eksVPC, eksClusterRole, user, eksID, clusterAccessSG)
 		if err != nil {
 			log.Error("Failed to create EKS cluster")
 			return err
@@ -141,7 +141,7 @@ func (i Instance) PulumiExec() (string, error) {
 			"arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy",
 		}
 		for i, nodeGroupPolicy := range nodeGroupPolicies {
-			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("ngpa-%d", i), &iam.RolePolicyAttachmentArgs{
+			_, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("ngpa-%d-%s", i, eksID), &iam.RolePolicyAttachmentArgs{
 				Role:      nodeGroupRole.Name,
 				PolicyArn: pulumi.String(nodeGroupPolicy),
 			})
@@ -159,7 +159,7 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 
 		// Create a EKS NodeGroup
-		_, err = infra.GetClusterNodeGroup(ctx, eksID, eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
+		_, err = infra.GetClusterNodeGroup(ctx, user, eksID, eksCluster, nodeGroupRole, eksVPC, i.Count, eksNodeInstanceType)
 		if err != nil {
 			log.Error("Failed to create node group")
 			return err
@@ -190,7 +190,7 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 
 		if i.Action == createAction {
-			ctx.Export("cluster-id", eksCluster.ClusterId)
+			ctx.Export("cluster-id", eksCluster.Name)
 			ctx.Export("cert-manager-role-arn", certManagerRole.Arn)
 		}
 

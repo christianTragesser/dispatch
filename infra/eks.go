@@ -14,7 +14,7 @@ const (
 	defaultScale int = 2
 )
 
-func GetEKS(ctx *pulumi.Context, eksVPC *ec2.Vpc, eksClusterRole *iam.Role, eksID string, sg *sg.SecurityGroup) (*eks.Cluster, error) {
+func GetEKS(ctx *pulumi.Context, eksVPC *ec2.Vpc, eksClusterRole *iam.Role, user string, eksID string, sg *sg.SecurityGroup) (*eks.Cluster, error) {
 	eksCluster, err := eks.NewCluster(ctx, eksID, &eks.ClusterArgs{
 		Name:    pulumi.String(eksID),
 		RoleArn: eksClusterRole.Arn,
@@ -27,6 +27,11 @@ func GetEKS(ctx *pulumi.Context, eksVPC *ec2.Vpc, eksClusterRole *iam.Role, eksI
 			},
 			SubnetIds: eksVPC.PublicSubnetIds,
 		},
+		Tags: pulumi.StringMap{
+			"Owner":       pulumi.String(user),
+			"EKS cluster": pulumi.String(eksID),
+			"Created by":  pulumi.String("Dispatch"),
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -35,7 +40,7 @@ func GetEKS(ctx *pulumi.Context, eksVPC *ec2.Vpc, eksClusterRole *iam.Role, eksI
 	return eksCluster, nil
 }
 
-func GetClusterNodeGroup(ctx *pulumi.Context, eksID string, eksCluster *eks.Cluster, nodeGroupRole *iam.Role, vpc *ec2.Vpc, nodeCount string, nodeType string) (*eks.NodeGroup, error) {
+func GetClusterNodeGroup(ctx *pulumi.Context, user string, eksID string, eksCluster *eks.Cluster, nodeGroupRole *iam.Role, vpc *ec2.Vpc, nodeCount string, nodeType string) (*eks.NodeGroup, error) {
 	minClusterSize, err := strconv.Atoi(nodeCount)
 	if err != nil {
 		return nil, err
@@ -52,6 +57,11 @@ func GetClusterNodeGroup(ctx *pulumi.Context, eksID string, eksCluster *eks.Clus
 			MaxSize:     pulumi.Int(minClusterSize + defaultScale),
 		},
 		InstanceTypes: pulumi.StringArray{pulumi.String(nodeType)},
+		Tags: pulumi.StringMap{
+			"Owner":       pulumi.String(user),
+			"EKS cluster": pulumi.String(eksID),
+			"Created by":  pulumi.String("Dispatch"),
+		},
 	})
 	if err != nil {
 		return nil, err
