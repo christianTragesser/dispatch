@@ -11,7 +11,7 @@ const (
 )
 
 func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc, user string, eksID string) (*sg.SecurityGroup, error) {
-	clusterSg, err := sg.NewSecurityGroup(ctx, eksID+"cluster-sg", &sg.SecurityGroupArgs{
+	clusterSg, err := sg.NewSecurityGroup(ctx, eksID+"-cluster-sg", &sg.SecurityGroupArgs{
 		VpcId: vpc.VpcId.ToStringPtrOutput(),
 		Egress: sg.SecurityGroupEgressArray{
 			sg.SecurityGroupEgressArgs{
