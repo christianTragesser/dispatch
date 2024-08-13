@@ -1,12 +1,8 @@
-run:
-  skip-dirs:
+issues:
+  exclude-dirs:
     - tuiaction
     - tuicreate
     - tuidelete
-  issues-exit-code: 1
-  timeout: 3m
-
-issues:
   exclude-rules:
     - linters:
       - gosec
@@ -14,6 +10,8 @@ issues:
     - linters:
       - gosec
       text: "Subprocess launched with a potential tainted input or cmd arguments"
+  issues-exit-code: 1
+  timeout: 3m
 
 linters:
   disable-all: true
@@ -28,13 +26,13 @@ linters:
     - gocritic
     - gofmt
     - goimports
-    - gomnd
     - gocyclo
     - gosec
     - gosimple
     - govet
     - ineffassign
     - misspell
+    - mnd
     - nolintlint
     - nakedret
     - prealloc
