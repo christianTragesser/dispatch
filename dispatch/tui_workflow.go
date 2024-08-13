@@ -25,6 +25,7 @@ func (i Instance) TUIWorkflow() (Instance, error) {
 			log.Error("Failed to set cluster name")
 			return i, fmt.Errorf("no cluster name provided")
 		}
+
 		return i, nil
 
 	case deleteAction:
@@ -41,6 +42,7 @@ func (i Instance) TUIWorkflow() (Instance, error) {
 				if err != nil {
 					return i, err
 				}
+
 				cluster := make(map[string]string)
 				cluster["name"] = c
 				cluster["date"] = metadata.LastModified.Format("2006-01-02 15:04:05") + " UTC"

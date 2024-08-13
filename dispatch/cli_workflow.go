@@ -50,6 +50,7 @@ func (i Instance) cliDelete() (Instance, error) {
 
 func (i Instance) CLIWorkflow() (Instance, error) {
 	var s Instance
+
 	action := os.Args[1]
 
 	switch action {
@@ -77,6 +78,7 @@ func (i Instance) CLIWorkflow() (Instance, error) {
 				return s, err
 			}
 		}
+
 		return s, err
 
 	case deleteAction:
@@ -95,6 +97,7 @@ func (i Instance) CLIWorkflow() (Instance, error) {
 				return s, err
 			}
 		}
+
 		return s, err
 
 	default:
@@ -111,7 +114,7 @@ func validateClusterName(name string) error {
 
 	if !valid {
 		return fmt.Errorf("invalid cluster name provided, '%s'\ncluster name must begin with a letter", name)
-	} else {
-		return nil
 	}
+
+	return nil
 }

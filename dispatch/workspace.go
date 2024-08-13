@@ -169,13 +169,18 @@ func (w workspace) installPulumi() error {
 func (w workspace) createDispatchConfig() error {
 	var dispatchUID string
 
-	configFile := w.root + "/dispatch.conf"
+	configFile := w.root + dispatchConfig
 
 	_, readErr := os.Stat(configFile)
 
 	if os.IsNotExist(readErr) {
 		fmt.Print(" + Please enter a user ID: ")
-		fmt.Scanf("%s", &dispatchUID)
+		_, err := fmt.Scanf("%s", &dispatchUID)
+
+		if err != nil {
+			log.Error("Failed to read dispatch user ID.")
+			return err
+		}
 
 		if len(dispatchUID) == 0 {
 			fmt.Println("   ! You must provide a user ID, exiting.")
@@ -307,10 +312,11 @@ func extractTarGz(archivePath string) error {
 				return err
 			}
 
+			//nolint:gosec
 			if _, err := io.Copy(f, tarReader); err != nil {
 				log.Error("Failed to copy archive file contents.")
 				return err
-			} // #nosec
+			}
 
 			f.Close()
 		default:
@@ -330,8 +336,9 @@ func getDispatchUserID(configFile string) (string, error) {
 
 	configMap := make(map[string]string)
 	err = yaml.Unmarshal(configData, &configMap)
+
 	if err != nil {
-		log.Error("Failed to retireve user ID from dispatch config file.")
+		log.Error("Failed to retrieve user ID from dispatch config file.")
 		return "", err
 	}
 

@@ -13,6 +13,7 @@ import (
 
 const (
 	pulumiVersion    string = "3.117.0"
+	dispatchConfig   string = "/dispatch.conf"
 	smallEC2         string = "t2.medium"
 	mediumEC2        string = "t2.xlarge"
 	largeEC2         string = "m4.2xlarge"
@@ -63,7 +64,6 @@ func (i Instance) testCredentials() error {
 	fmt.Printf(" . Valid AWS credentials have been provided for region %s\n", clientConfig.Region)
 
 	return nil
-
 }
 
 func (i Instance) setBucket() (string, error) {
@@ -74,7 +74,7 @@ func (i Instance) setBucket() (string, error) {
 		return "", err
 	}
 
-	uid, err := getDispatchUserID(i.Home.root + "/dispatch.conf")
+	uid, err := getDispatchUserID(i.Home.root + dispatchConfig)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +100,11 @@ func (i Instance) setBucket() (string, error) {
 		if !i.Verified {
 			fmt.Printf(" ! S3 bucket %s for stack state does not exists\n", bucketName)
 			fmt.Printf("\n ? Create S3 bucket %s (y/n): ", bucketName)
-			fmt.Scanf("%s", &createBucket)
+
+			_, err := fmt.Scanf("%s", &createBucket)
+			if err != nil {
+				return "", err
+			}
 		}
 
 		if createBucket == "y" || createBucket == "Y" || i.Verified {
@@ -117,6 +121,7 @@ func (i Instance) setBucket() (string, error) {
 
 func (i Instance) getExistingClusters() ([]string, error) {
 	var clusters []string
+
 	clientConfig := awsClientConfig()
 
 	s3Client := s3.NewFromConfig(*clientConfig)
@@ -186,6 +191,7 @@ func (i Instance) InitInstance() (Instance, error) {
 
 	if len(clusters) > 0 {
 		fmt.Println(" . Existing clusters:")
+
 		for _, item := range clusters {
 			p := strings.Split(item, "/")
 			f := p[len(p)-1]

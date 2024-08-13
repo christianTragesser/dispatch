@@ -61,9 +61,12 @@ func (i Instance) setPulumiEngine() error {
 	return nil
 }
 
+//nolint:gocyclo
 func (i Instance) PulumiExec() (string, error) {
 	var eksCertManagerRoleARN string
-	user, err := getDispatchUserID(i.Home.root + "/dispatch.conf")
+
+	user, err := getDispatchUserID(i.Home.root + dispatchConfig)
+
 	if err != nil {
 		return "", err
 	}
@@ -117,6 +120,7 @@ func (i Instance) PulumiExec() (string, error) {
 		}
 
 		clientConfig := awsClientConfig()
+
 		accountNumber, err := getAccountNumber(clientConfig)
 		if err != nil {
 			return err
@@ -220,7 +224,11 @@ func (i Instance) PulumiExec() (string, error) {
 		fmt.Printf(" Pulumi stack: %s\n", stackID)
 
 		fmt.Printf("\n ? %s cluster %s (y/n): ", i.Action, i.Name)
-		fmt.Scanf("%s", &approve)
+
+		_, err := fmt.Scanf("%s", &approve)
+		if err != nil {
+			return "", err
+		}
 
 		if approve != "Y" && approve != "y" {
 			os.Exit(0)
@@ -286,7 +294,7 @@ func (i Instance) PulumiExec() (string, error) {
 			return "", err
 		}
 
-		//eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
+		// eksCertManagerRoleARN = res.Outputs["cert-manager-role-arn"].Value.(string)
 		fmt.Printf("\n Run the following command for kubectl access to EKS cluster %s:\n", i.Name)
 		fmt.Printf(" export KUBECONFIG='%s'\n\n", kubeConfigPath)
 

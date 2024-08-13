@@ -6,6 +6,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+const (
+	defaultIngressPort int = 80
+)
+
 func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc) (*sg.SecurityGroup, error) {
 	clusterSg, err := sg.NewSecurityGroup(ctx, "cluster-sg", &sg.SecurityGroupArgs{
 		VpcId: vpc.VpcId.ToStringPtrOutput(),
@@ -20,8 +24,8 @@ func GetClusterAccessSG(ctx *pulumi.Context, vpc *ec2.Vpc) (*sg.SecurityGroup, e
 		Ingress: sg.SecurityGroupIngressArray{
 			sg.SecurityGroupIngressArgs{
 				Protocol:   pulumi.String("tcp"),
-				FromPort:   pulumi.Int(80),
-				ToPort:     pulumi.Int(80),
+				FromPort:   pulumi.Int(defaultIngressPort),
+				ToPort:     pulumi.Int(defaultIngressPort),
 				CidrBlocks: pulumi.StringArray{pulumi.String("0.0.0.0/0")},
 			},
 		},

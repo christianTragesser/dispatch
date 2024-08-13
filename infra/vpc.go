@@ -5,6 +5,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+const (
+	defaultSubnetMask int = 24
+)
+
 func GetVPC(ctx *pulumi.Context, user string, eksID string) (*ec2.Vpc, error) {
 	subnetStrategy := ec2.SubnetAllocationStrategyAuto
 	eksVpc, err := ec2.NewVpc(ctx, eksID, &ec2.VpcArgs{
@@ -14,7 +18,7 @@ func GetVPC(ctx *pulumi.Context, user string, eksID string) (*ec2.Vpc, error) {
 			{
 				Name:     pulumi.StringRef(eksID + "-public"),
 				Type:     ec2.SubnetTypePublic,
-				CidrMask: pulumi.IntRef(24),
+				CidrMask: pulumi.IntRef(defaultSubnetMask),
 			},
 		},
 		NatGateways: &ec2.NatGatewayConfigurationArgs{
@@ -27,6 +31,7 @@ func GetVPC(ctx *pulumi.Context, user string, eksID string) (*ec2.Vpc, error) {
 			"Created by":  pulumi.String("Dispatch"),
 		},
 	})
+
 	if err != nil {
 		return nil, err
 	}

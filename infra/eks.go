@@ -10,6 +10,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+const (
+	defaultScale int = 2
+)
+
 func GetEKS(ctx *pulumi.Context, eksVPC *ec2.Vpc, eksClusterRole *iam.Role, eksID string, sg *sg.SecurityGroup) (*eks.Cluster, error) {
 	eksCluster, err := eks.NewCluster(ctx, eksID, &eks.ClusterArgs{
 		Name:    pulumi.String(eksID),
@@ -45,7 +49,7 @@ func GetClusterNodeGroup(ctx *pulumi.Context, eksID string, eksCluster *eks.Clus
 		ScalingConfig: &eks.NodeGroupScalingConfigArgs{
 			DesiredSize: pulumi.Int(minClusterSize),
 			MinSize:     pulumi.Int(minClusterSize),
-			MaxSize:     pulumi.Int(minClusterSize + 2),
+			MaxSize:     pulumi.Int(minClusterSize + defaultScale),
 		},
 		InstanceTypes: pulumi.StringArray{pulumi.String(nodeType)},
 	})

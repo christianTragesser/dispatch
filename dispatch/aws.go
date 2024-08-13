@@ -77,7 +77,6 @@ func testIAM(clientConfig *aws.Config) error {
 }
 
 func getAccountNumber(clientConfig *aws.Config) (string, error) {
-
 	input := &sts.GetCallerIdentityInput{}
 
 	stsClient := sts.NewFromConfig(*clientConfig)
@@ -85,7 +84,7 @@ func getAccountNumber(clientConfig *aws.Config) (string, error) {
 	response, err := stsClient.GetCallerIdentity(context.TODO(), input)
 	if err != nil {
 		log.Error("Failed to get AWS account number.")
-		return "", nil
+		return "", err
 	}
 
 	return *response.Account, nil

@@ -24,7 +24,9 @@ func main() {
 		}
 
 		fmt.Print(asciiArt)
+
 		session, err = session.InitInstance()
+
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
@@ -38,6 +40,7 @@ func main() {
 	} else {
 		// use TUI workflow
 		fmt.Print(asciiArt)
+
 		session, err := instance.InitInstance()
 		if err != nil {
 			fmt.Println(err)

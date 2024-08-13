@@ -11,7 +11,7 @@ COPY tuiaction ./tuiaction
 COPY tuicreate ./tuicreate
 COPY tuidelete ./tuidelete
 
-FROM goreleaser/goreleaser as build
+FROM goreleaser/goreleaser:v1.26.2 as build
 COPY --from=source $GOPATH/src/github.com/christiantragesser/dispatch $GOPATH/src/github.com/christiantragesser/dispatch
 WORKDIR $GOPATH/src/github.com/christiantragesser/dispatch
 RUN goreleaser build --snapshot
